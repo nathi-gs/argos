@@ -464,12 +464,12 @@
                                     </li>
                                     <li>
                                         <button onClick={() => onNavigate('profiles')} className="hover:text-blue-200 transition-colors text-lg font-medium px-4 py-2 rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400">
-                                            <i className="fas fa-id-badge mr-2"></i> Perfis de Acesso
+                                            <i className="fas fa-id-badge mr-2"></i> Perfis
                                         </button>
                                     </li>
                                     <li>
                                         <button onClick={() => onNavigate('logs')} className="hover:text-blue-200 transition-colors text-lg font-medium px-4 py-2 rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400">
-                                            <i className="fas fa-stream mr-2"></i> Monitoramento de Logs
+                                            <i className="fas fa-stream mr-2"></i> Logs
                                         </button>
                                     </li>
                                     <li>
@@ -484,7 +484,7 @@
                                     </li>
                                     <li>
                                         <button onClick={() => onNavigate('incidentHistory')} className="hover:text-blue-200 transition-colors text-lg font-medium px-4 py-2 rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400">
-                                            <i className="fas fa-history mr-2"></i> Histórico de Incidentes
+                                            <i className="fas fa-history mr-2"></i> Histórico
                                         </button>
                                     </li>
                                     <li>
@@ -544,7 +544,7 @@
             return (
                 <div className="p-8 bg-white rounded-lg shadow-xl max-w-2xl mx-auto">
                     <h2 className="text-3xl font-semibold mb-6 text-gray-800 border-b-2 border-blue-400 pb-2">
-                        <i className="fas fa-user-plus mr-3"></i> Incluir Novo Usuário
+                        <i className="fas fa-user-plus mr-3"></i> Novo Usuário
                     </h2>
                     <form onSubmit={handleSubmit}>
                         <div className="mb-4">
@@ -766,7 +766,7 @@
                 return (
                     <div className="p-8 bg-white rounded-lg shadow-xl max-w-2xl mx-auto">
                         <h2 className="text-3xl font-semibold mb-6 text-gray-800 border-b-2 border-blue-400 pb-2">
-                            <i className="fas fa-id-badge mr-3"></i> Criar Novo Perfil de Acesso
+                            <i className="fas fa-id-badge mr-3"></i> Novo Perfil de Acesso
                         </h2>
                         <form onSubmit={handleSubmit}>
                             <div className="mb-4">
@@ -830,7 +830,7 @@
             return (
                 <div className="p-8">
                     <h2 className="text-3xl font-semibold mb-6 text-gray-800 border-b-2 border-blue-400 pb-2">
-                        <i className="fas fa-id-badge mr-3"></i> Gerenciamento de Perfis de Acesso
+                        <i className="fas fa-id-badge mr-3"></i> Gerenciamento de Perfil
                     </h2>
 
                     <div className="flex justify-end mb-6">
@@ -838,7 +838,7 @@
                             onClick={() => setShowAddProfileForm(true)}
                             className="bg-blue-600 text-white px-5 py-3 rounded-lg shadow-md hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400"
                         >
-                            <i className="fas fa-plus-circle mr-2"></i> Criar Novo Perfil
+                            <i className="fas fa-plus-circle mr-2"></i> Novo Perfil
                         </button>
                     </div>
 
@@ -1096,7 +1096,7 @@
             return (
                 <div className="p-8">
                     <h2 className="text-3xl font-semibold mb-6 text-gray-800 border-b-2 border-blue-400 pb-2">
-                        <i className="fas fa-stream mr-3"></i> Monitoramento de Logs em Tempo Real
+                        <i className="fas fa-stream mr-3"></i> Monitoramento de Logs
                     </h2>
 
                     <div className="flex items-center space-x-4 mb-6">
@@ -1106,7 +1106,6 @@
                             onChange={(e) => setFilterSeverity(e.target.value)}
                         >
                             <option value="">Todas as Severidades</option>
-                            <option value="Info">Info</option>
                             <option value="Baixo">Baixo</option>
                             <option value="Médio">Médio</option>
                             <option value="Alto">Alto</option>
@@ -1120,8 +1119,6 @@
                             <option value="">Todos os Tipos</option>
                             <option value="Login">Login</option>
                             <option value="Acesso">Acesso</option>
-                            <option value="Configuração">Configuração</option>
-                            <option value="Dados">Dados</option>
                         </select>
                         <button
                             onClick={() => setShowMonitoringConfig(true)}
@@ -1168,7 +1165,7 @@
                             </select>
                         </div>
                         {filteredMonitoringPoints.length === 0 ? (
-                            <p className="text-gray-600 text-center py-4">Nenhum ponto de monitoramento encontrado com os filtros aplicados.</p>
+                            <p className="text-gray-600 text-center py-4">Nenhum ponto de monitoramento encontrado</p>
                         ) : (
                             <table className="min-w-full divide-y divide-gray-200">
                                 <thead className="bg-gray-50">
@@ -1208,7 +1205,7 @@
                     </h3>
                     <div className="bg-white p-6 rounded-lg shadow-xl scroll-container">
                         {filteredLogs.length === 0 ? (
-                            <p className="text-gray-600 text-center py-8">Nenhum log encontrado com os filtros aplicados.</p>
+                            <p className="text-gray-600 text-center py-8">Nenhum log encontrado</p>
                         ) : (
                             <table className="min-w-full divide-y divide-gray-200">
                                 <thead className="bg-gray-50">
@@ -1442,7 +1439,7 @@
                     </div>
 
                     <div className="mt-8 bg-white p-6 rounded-lg shadow-xl">
-                        <h3 className="text-2xl font-semibold mb-4 text-gray-800 border-b border-gray-200 pb-2">Evolução do Volume Total de Incidentes (Comparação de Períodos)</h3>
+                        <h3 className="text-2xl font-semibold mb-4 text-gray-800 border-b border-gray-200 pb-2">Volume de Incidentes</h3>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end mb-6">
                             <div>
                                 <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="evolutionPeriod1">
@@ -1479,7 +1476,7 @@
                                     onClick={handleGenerateEvolutionChart}
                                     className="bg-blue-600 text-white px-5 py-3 rounded-lg shadow-md hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400 w-full md:w-auto"
                                 >
-                                    <i className="fas fa-chart-line mr-2"></i> Gerar Gráfico de Evolução
+                                    <i className="fas fa-chart-line mr-2"></i> Gerar Gráfico
                                 </button>
                             </div>
                         </div>
@@ -1508,7 +1505,7 @@
                                     </div>
                                 ))
                             ) : (
-                                <p className="text-gray-600 text-center w-full py-8">Selecione os períodos e clique em "Gerar Gráfico de Evolução".</p>
+                                <p className="text-gray-600 text-center w-full py-8">Selecione os períodos e clique em "Gerar Gráfico".</p>
                             )}
                         </div>
                         <div className="flex justify-end space-x-4 mt-8">
@@ -1643,7 +1640,7 @@
             return (
                 <div className="p-8 bg-white rounded-lg shadow-xl max-w-2xl mx-auto">
                     <h2 className="text-3xl font-semibold mb-6 text-gray-800 border-b-2 border-blue-400 pb-2">
-                        <i className="fas fa-plus-circle mr-3"></i> Criar Nova Regra de Alerta
+                        <i className="fas fa-plus-circle mr-3"></i> Nova Regra de Alerta
                     </h2>
                     <form onSubmit={handleSubmit}>
                         <div className="mb-4">
@@ -1809,18 +1806,18 @@
                     </h2>
 
                     <div className="flex justify-between items-center mb-6">
-                        <h3 className="text-2xl font-medium text-gray-700">Regras de Alerta Configuradas</h3>
+                        <h3 className="text-2xl font-medium text-gray-700">Regras de Alerta</h3>
                         <button
                             onClick={() => setShowAddRuleForm(true)}
                             className="bg-blue-600 text-white px-5 py-3 rounded-lg shadow-md hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400"
                         >
-                            <i className="fas fa-plus-circle mr-2"></i> Criar Nova Regra
+                            <i className="fas fa-plus-circle mr-2"></i> Nova Regra
                         </button>
                     </div>
 
                     <div className="bg-white p-6 rounded-lg shadow-xl scroll-container mb-8">
                         {alertRules.length === 0 ? (
-                            <p className="text-gray-600 text-center py-8">Nenhuma regra de alerta configurada.</p>
+                            <p className="text-gray-600 text-center py-8">Nenhuma regra de alerta.</p>
                         ) : (
                             <table className="min-w-full divide-y divide-gray-200">
                                 <thead className="bg-gray-50">
@@ -2053,7 +2050,7 @@
                                     onClick={handleGenerateComparisonChart}
                                     className="bg-blue-600 text-white px-5 py-3 rounded-lg shadow-md hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400 w-full md:w-auto"
                                 >
-                                    <i className="fas fa-chart-bar mr-2"></i> Gerar Gráfico de Comparação
+                                    <i className="fas fa-chart-bar mr-2"></i> Gerar Gráfico
                                 </button>
                             </div>
                         </div>
@@ -2082,7 +2079,7 @@
                                     </div>
                                 ))
                             ) : (
-                                <p className="text-gray-600 text-center w-full py-8">Selecione os períodos e clique em "Gerar Comparação".</p>
+                                <p className="text-gray-600 text-center w-full py-8">Selecione os períodos e clique em "Gerar".</p>
                             )}
                         </div>
                         <div className="flex justify-end space-x-4 mt-8">
@@ -2102,7 +2099,7 @@
                     </div>
 
                     <div className="bg-white p-6 rounded-lg shadow-xl mb-8">
-                        <h3 className="text-2xl font-medium text-gray-700 mb-4">Detalhes do Histórico de Incidentes</h3>
+                        <h3 className="text-2xl font-medium text-gray-700 mb-4">Detalhes do Histórico</h3>
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                             <div>
                                 <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="filterIP">
@@ -2174,7 +2171,7 @@
 
                         <div className="bg-white p-6 rounded-lg shadow-xl scroll-container">
                             {getSortedAndFilteredIncidents().length === 0 ? (
-                                <p className="text-gray-600 text-center py-8">Nenhum incidente encontrado com os filtros aplicados.</p>
+                                <p className="text-gray-600 text-center py-8">Nenhum incidente encontrado.</p>
                             ) : (
                                 <table className="min-w-full divide-y divide-gray-200">
                                     <thead className="bg-gray-50">
@@ -2320,7 +2317,7 @@
                     </h2>
 
                     <div className="bg-white p-6 rounded-lg shadow-xl mb-8">
-                        <h3 className="text-2xl font-medium text-gray-700 mb-4">Gerar Novo Relatório</h3>
+                        <h3 className="text-2xl font-medium text-gray-700 mb-4">Novo Relatório</h3>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end mb-6">
                             <div>
                                 <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="reportType">
