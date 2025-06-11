@@ -1,0 +1,2594 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Argos</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"></link>
+    <!-- Inter Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+            color: #333;
+        }
+        .scroll-container {
+            max-height: calc(100vh - 120px); /* Adjust based on header/footer height */
+            overflow-y: auto;
+        }
+        .bar-chart-container {
+            display: flex;
+            align-items: flex-end;
+            height: 200px;
+            gap: 8px;
+            padding: 16px;
+            background-color: #f9fafb;
+            border-radius: 8px;
+            box-shadow: inset 0 0 5px rgba(0,0,0,0.05);
+            position: relative;
+        }
+        .bar {
+            width: 100%;
+            background-color: #3b82f6; /* Blue-500 */
+            border-radius: 4px 4px 0 0;
+            transition: height 0.5s ease-out;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: center;
+            position: relative;
+        }
+        .bar-label {
+            position: absolute;
+            bottom: -25px;
+            font-size: 0.75rem; /* text-xs */
+            color: #4b5563; /* text-gray-600 */
+        }
+        .bar-value {
+            position: absolute;
+            top: -20px;
+            font-size: 0.75rem; /* text-xs */
+            font-weight: 600; /* font-semibold */
+            color: #333;
+        }
+
+        /* Specific styles for incident type chart */
+        .incident-type-bar-chart-container {
+            display: flex;
+            align-items: flex-end;
+            height: 200px;
+            gap: 8px;
+            padding: 16px;
+            background-color: #f9fafb;
+            border-radius: 8px;
+            box-shadow: inset 0 0 5px rgba(0,0,0,0.05);
+            position: relative;
+            margin-top: 20px;
+        }
+        .incident-type-bar {
+            width: 100%;
+            background-color: #ef4444; /* Red-500 */
+            border-radius: 4px 4px 0 0;
+            transition: height 0.5s ease-out;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: center;
+            position: relative;
+        }
+        .incident-type-bar-label {
+            position: absolute;
+            bottom: -25px;
+            font-size: 0.75rem; /* text-xs */
+            color: #4b5563; /* text-gray-600 */
+        }
+        .incident-type-bar-value {
+            position: absolute;
+            top: -20px;
+            font-size: 0.75rem; /* text-xs */
+            font-weight: 600; /* font-semibold */
+            color: #333;
+        }
+
+        /* Styles for comparison chart */
+        .comparison-chart-container {
+            display: flex;
+            align-items: flex-end;
+            height: 250px;
+            gap: 12px;
+            padding: 16px;
+            background-color: #f9fafb;
+            border-radius: 8px;
+            box-shadow: inset 0 0 5px rgba(0,0,0,0.05);
+            position: relative;
+        }
+        .comparison-bar-group {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: center;
+            flex: 1;
+            position: relative;
+        }
+        .comparison-bar-pair {
+            display: flex;
+            width: 100%;
+            height: 100%;
+            align-items: flex-end;
+            gap: 2px;
+        }
+        .comparison-bar {
+            flex: 1;
+            border-radius: 4px 4px 0 0;
+            transition: height 0.5s ease-out;
+            position: relative;
+        }
+        .comparison-bar.period1 {
+            background-color: #3b82f6; /* Blue-500 */
+        }
+        .comparison-bar.period2 {
+            background-color: #ef4444; /* Red-500 */
+        }
+        .comparison-bar-value {
+            position: absolute;
+            top: -20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #333;
+            width: 100%;
+            text-align: center;
+        }
+        .comparison-bar-label {
+            position: absolute;
+            bottom: -25px;
+            font-size: 0.75rem;
+            color: #4b5563;
+            width: 100%;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // Utility function to generate unique IDs
+        const generateId = () => Math.random().toString(36).substr(2, 9);
+
+        // --- Simulated Data ---
+        const initialUsers = [
+            { id: generateId(), name: 'Gustavo Barros', email: 'gestor@argos.com', profile: 'Gestor SOC', status: 'Ativo' },
+            { id: generateId(), name: 'Maria Clara Rangel', email: 'maria.c@argos.com', profile: 'Analista de Segurança (Nível 2)', status: 'Ativo' },
+            { id: generateId(), name: 'Matheus Batista', email: 'matheus.b@argos.com', profile: 'Especialista Forense', status: 'Ativo' },
+            { id: generateId(), name: 'Pedro Marques', email: 'pedro.m@argos.com', profile: 'Analista de Risco', status: 'Ativo' },
+            { id: generateId(), name: 'Nathalia Silva', email: 'nathalia.s@argos.com', profile: 'DPO', status: 'Inativo' },
+            { id: generateId(), name: 'João Souza', email: 'joao.s@argos.com', profile: 'Analista de Segurança (Nível 1)', status: 'Ativo' },
+        ];
+
+        const initialProfiles = [
+            { id: generateId(), name: 'Gestor SOC', permissions: ['Gerenciar Usuários', 'Gerenciar Perfis', 'Monitorar Logs', 'Ver Dashboard', 'Configurar Ponto de Monitoramento', 'Configurar Alertas', 'Gerar Relatórios', 'Ver Histórico de Incidentes'] },
+            { id: generateId(), name: 'Analista de Segurança (Nível 1)', permissions: ['Monitorar Logs', 'Ver Dashboard'] },
+            { id: generateId(), name: 'Analista de Segurança (Nível 2)', permissions: ['Monitorar Logs', 'Ver Dashboard', 'Investigar Incidentes', 'Gerar Relatórios', 'Ver Histórico de Incidentes'] },
+            { id: generateId(), name: 'Especialista Forense', permissions: ['Investigar Incidentes', 'Exportar Relatórios', 'Gerar Relatórios', 'Ver Histórico de Incidentes'] },
+            { id: generateId(), name: 'Analista de Risco', permissions: ['Ver Dashboard', 'Analisar Tendências', 'Gerar Relatórios', 'Ver Histórico de Incidentes'] },
+            { id: generateId(), name: 'DPO', permissions: ['Ver Dashboard', 'Exportar Relatórios (Dados Pessoais)', 'Gerar Relatórios', 'Ver Histórico de Incidentes'] },
+        ];
+
+        const availablePermissions = [
+            'Gerenciar Usuários', 'Gerenciar Perfis', 'Monitorar Logs', 'Ver Dashboard',
+            'Investigar Incidentes', 'Exportar Relatórios', 'Analisar Tendências',
+            'Configurar Alertas', 'Gerenciar Pontos de Monitoramento', 'Exportar Relatórios (Dados Pessoais)',
+            'Gerar Relatórios', 'Ver Histórico de Incidentes'
+        ];
+
+        const initialMonitoringPoints = [
+            { id: generateId(), name: 'Servidor Web Produção', ip: '192.168.10.1', port: '514', status: 'Ativo', os: 'Linux' },
+            { id: generateId(), name: 'Desktop Financeiro', ip: '10.0.0.15', port: '514', status: 'Inativo', os: 'Windows' },
+            { id: generateId(), name: 'Firewall Principal', ip: '172.16.0.1', port: '514', status: 'Com Erro', os: 'Linux' },
+        ];
+
+        const initialAlertRules = [
+            { id: generateId(), name: 'Tentativas de Login Falhas', description: 'Detectar múltiplas tentativas de login sem sucesso.', severity: 'Alto', activityKeyword: 'FALHA DE LOGIN', cooldown: 60 },
+            { id: generateId(), name: 'Acesso de IP Suspeito', description: 'Monitorar acessos de IPs listados em blacklists.', severity: 'Crítico', activityKeyword: 'IP SUSPEITO', cooldown: 300 },
+        ];
+
+        // This will be the simulated triggered alerts
+        const initialTriggeredAlerts = [];
+
+
+        const generateLog = (type = 'Login', severity = 'Info') => {
+            const ips = ['192.168.1.1', '10.0.0.5', '172.16.0.10', '203.0.113.45', '198.51.100.22'];
+            const users = ['admin', 'johndoe', 'sysuser', 'guest', 'security_auditor'];
+            const activities = ['tentativa de login', 'acesso a arquivo', 'modificação de configuração', 'transferência de dados', 'criação de usuário'];
+            const statuses = ['SUCESSO', 'FALHA', 'NEGADO'];
+
+            const randomIp = ips[Math.floor(Math.random() * ips.length)];
+            const randomUser = users[Math.floor(Math.random() * users.length)];
+            let randomActivity = activities[Math.floor(Math.random() * activities.length)];
+            const randomStatus = statuses[Math.floor(Math.random() * statuses.length)];
+            const timestamp = new Date().toLocaleString('pt-BR');
+
+            // Inject specific keywords for simulation
+            if (Math.random() < 0.15) { // 15% chance of a "suspicious" activity
+                if (Math.random() < 0.5) {
+                    randomActivity = 'FALHA DE LOGIN';
+                    severity = 'Alto';
+                } else {
+                    randomActivity = 'IP SUSPEITO';
+                    severity = 'Crítico';
+                }
+            }
+
+            return {
+                id: generateId(),
+                timestamp,
+                ip: randomIp,
+                user: randomUser,
+                activity: randomActivity,
+                status: randomStatus,
+                severity: severity,
+                type: type // Keeping this simple, could be derived from activity
+            };
+        };
+
+        const initialLogs = Array.from({ length: 20 }).map(() => generateLog());
+
+        const getThreatSummary = () => {
+            const severities = ['Baixo', 'Médio', 'Alto', 'Crítico'];
+            const summary = {};
+            severities.forEach(s => {
+                summary[s] = Math.floor(Math.random() * 50); // Random number of threats
+            });
+            return summary;
+        };
+
+        // Simulated Report Data Generation
+        const generateDailyActivityReport = (date) => {
+            const activities = ['Login Bem-Sucedido', 'Login Falho', 'Acesso a Dados Sensíveis', 'Modificação de Configuração', 'Atividade de Rede Suspeita'];
+            const severities = ['Baixo', 'Médio', 'Alto', 'Crítico'];
+            const data = Array.from({ length: 10 + Math.floor(Math.random() * 10) }).map(() => ({
+                timestamp: new Date(2025, 5, date.getDate(), Math.floor(Math.random() * 24), Math.floor(Math.random() * 60)).toLocaleString('pt-BR'),
+                activity: activities[Math.floor(Math.random() * activities.length)],
+                severity: severities[Math.floor(Math.random() * severities.length)],
+                user: `user_${Math.floor(Math.random() * 5) + 1}`,
+                ip: `192.168.1.${Math.floor(Math.random() * 255)}`
+            }));
+            return data;
+        };
+
+        const generateTrendReport = (period) => {
+            const types = ['Tentativas de Acesso Não Autorizado', 'Contas Comprometidas', 'Atividade Interna Maliciosa'];
+            const data = [];
+            for (let i = 0; i < 7; i++) { // Simulate 7 data points (e.g., days or weeks)
+                data.push({
+                    period: `Período ${i + 1}`,
+                    type: types[Math.floor(Math.random() * types.length)],
+                    incidents: Math.floor(Math.random() * 100)
+                });
+            }
+            return data;
+        };
+
+        const generatePersonalDataReport = (date) => {
+            const dataTypes = ['Nome', 'Email', 'CPF', 'Endereço', 'Telefone', 'Dados Financeiros'];
+            const incidents = ['Vazamento de Confidencialidade', 'Violação de Integridade', 'Tratamento Indevido'];
+            const data = Array.from({ length: 5 + Math.floor(Math.random() * 5) }).map(() => ({
+                timestamp: new Date(2025, 5, date.getDate(), Math.floor(Math.random() * 24), Math.floor(Math.random() * 60)).toLocaleString('pt-BR'),
+                incidentType: incidents[Math.floor(Math.random() * incidents.length)],
+                dataType: dataTypes[Math.floor(Math.random() * dataTypes.length)],
+                affectedUsers: Math.floor(Math.random() * 10) + 1,
+            }));
+            return data;
+        };
+
+        const generateLoginActivityReport = (type = 'Bem-Sucedido') => {
+            const users = ['admin', 'johndoe', 'sysuser', 'guest'];
+            const ips = ['192.168.1.1', '10.0.0.5', '172.16.0.10'];
+            const statuses = type === 'Bem-Sucedido' ? ['SUCESSO'] : ['FALHA', 'NEGADO'];
+
+            const data = Array.from({ length: 15 + Math.floor(Math.random() * 10) }).map(() => ({
+                timestamp: new Date().toLocaleString('pt-BR'),
+                user: users[Math.floor(Math.random() * users.length)],
+                ip: ips[Math.floor(Math.random() * ips.length)],
+                status: statuses[Math.floor(Math.random() * statuses.length)],
+            }));
+            return data;
+        };
+
+        // Function to generate simulated chart data (overall trends)
+        const generateOverallTrendChartData = () => {
+            const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+            return months.map(month => ({
+                month: month,
+                incidents: Math.floor(Math.random() * 200) + 50 // Incidents between 50 and 250
+            }));
+        };
+
+        // Function to generate simulated incident type data for last 24 hours
+        const generateIncidentTypeData = () => {
+            // Types specified by the user: IP Suspeito, Acesso Fora de Hora, Falhas de Login
+            const types = ['IP Suspeito', 'Acesso Fora de Hora', 'Falhas de Login'];
+            const data = {};
+            types.forEach(type => {
+                // Simulate incidents happening in last 24 hours
+                data[type] = Math.floor(Math.random() * 50) + 5; // Between 5 and 55 incidents
+            });
+            return data;
+        };
+
+        // Function to generate simulated summary report text
+        const generateSimulatedSummaryReport = () => {
+            return `
+                Este relatório de tendências anual demonstra uma variação no volume de incidentes de segurança.
+                Observa-se um pico notável nos meses de [Mês X], possivelmente relacionado a campanhas de phishing sazonais.
+                A categoria de 'Tentativas de Acesso Não Autorizado' continua sendo a mais prevalente, correspondendo a aproximadamente
+                ${(Math.random() * 40 + 30).toFixed(0)}% do total de incidentes. As contramedidas implementadas em [Mês Y] parecem
+                ter contribuído para uma leve diminuição na frequência de 'Contas Comprometidas' no último trimestre.
+                É recomendada uma investigação aprofundada nos incidentes de alta severidade ocorridos em [Mês Z] para
+                identificar vulnerabilidades subjacentes.
+            `;
+        };
+
+        // Simulated detailed historical incident data generation
+        const generateDetailedHistoricalIncidents = (periodKey) => {
+            const incidents = [];
+            const now = new Date();
+            let startDate = new Date();
+            let endDate = new Date();
+
+            switch (periodKey) {
+                case 'currentMonth':
+                    startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+                    endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+                    break;
+                case 'lastMonth':
+                    startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+                    endDate = new Date(now.getFullYear(), now.getMonth(), 0);
+                    break;
+                case 'currentQuarter':
+                    const currentQuarter = Math.floor(now.getMonth() / 3);
+                    startDate = new Date(now.getFullYear(), currentQuarter * 3, 1);
+                    endDate = new Date(now.getFullYear(), currentQuarter * 3 + 3, 0);
+                    break;
+                case 'lastQuarter':
+                    const lastQuarter = Math.floor((now.getMonth() - 3) / 3);
+                    startDate = new Date(now.getFullYear(), lastQuarter * 3, 1);
+                    endDate = new Date(now.getFullYear(), lastQuarter * 3 + 3, 0);
+                    break;
+                case 'currentYear':
+                    startDate = new Date(now.getFullYear(), 0, 1);
+                    endDate = new Date(now.getFullYear(), 11, 31);
+                    break;
+                case 'lastYear':
+                    startDate = new Date(now.getFullYear() - 1, 0, 1);
+                    endDate = new Date(now.getFullYear() - 1, 11, 31);
+                    break;
+                default:
+                    // Default to last 7 days for detailed view
+                    startDate.setDate(now.getDate() - 7);
+                    endDate = new Date();
+                    break;
+            }
+
+            const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
+
+            const incidentTypes = ['IP Suspeito', 'Acesso Fora de Hora', 'Falha de Login', 'Modificação de Dados', 'Transferência Externa', 'Atividade Maliciosa'];
+            const severities = ['Baixo', 'Médio', 'Alto', 'Crítico'];
+            const users = ['admin', 'johndoe', 'sys_audit', 'guest_user', 'dev_ops'];
+            const ips = ['192.168.1.1', '10.0.0.5', '172.16.0.10', '203.0.113.45', '198.51.100.22', '1.1.1.1', '8.8.8.8'];
+
+            const numIncidents = Math.floor(Math.random() * 150) + 50; // Generate a good number of incidents for the table
+
+            for (let i = 0; i < numIncidents; i++) {
+                const randomTimeOffset = Math.random() * diffTime;
+                const incidentDate = new Date(startDate.getTime() + randomTimeOffset);
+
+                incidents.push({
+                    id: generateId(),
+                    timestamp: incidentDate.toLocaleString('pt-BR'),
+                    type: incidentTypes[Math.floor(Math.random() * incidentTypes.length)],
+                    severity: severities[Math.floor(Math.random() * severities.length)],
+                    user: users[Math.floor(Math.random() * users.length)],
+                    ip: ips[Math.floor(Math.random() * ips.length)],
+                    description: `Detalhes do incidente de ${incidentTypes[Math.floor(Math.random() * incidentTypes.length)]}.`
+                });
+            }
+            return incidents;
+        };
+
+        // New function to generate comparison chart data for dashboard
+        const generateEvolutionChartData = (periodLength = 6, type = 'monthly') => {
+            const data = [];
+            const now = new Date();
+            let labels = [];
+
+            if (type === 'monthly') {
+                for (let i = periodLength - 1; i >= 0; i--) {
+                    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+                    labels.push(d.toLocaleString('pt-BR', { month: 'short', year: '2-digit' }));
+                }
+            } else if (type === 'weekly') {
+                for (let i = periodLength - 1; i >= 0; i--) {
+                    const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - (i * 7));
+                    labels.push(`Semana ${Math.ceil(d.getDate() / 7)}/${d.getMonth() + 1}`);
+                }
+            } else if (type === 'daily') {
+                for (let i = periodLength - 1; i >= 0; i--) {
+                    const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
+                    labels.push(`${d.getDate()}/${d.getMonth() + 1}`);
+                }
+            }
+
+
+            labels.forEach(label => {
+                data.push({
+                    label: label,
+                    incidents: Math.floor(Math.random() * 200) + 50
+                });
+            });
+            return data;
+        };
+
+
+        // --- Components ---
+
+        const Header = ({ onNavigate, isLoggedIn, onLogout }) => {
+            return (
+                <header className="bg-gradient-to-r from-blue-700 to-blue-500 text-white p-4 shadow-lg rounded-b-lg">
+                    <div className="container mx-auto flex justify-between items-center">
+                        <h1 className="text-3xl font-bold flex items-center">
+                            <i className="fas fa-shield-alt mr-3"></i> Argos - Analisador Forense
+                        </h1>
+                        {isLoggedIn && (
+                            <nav>
+                                <ul className="flex space-x-6 items-center">
+                                    <li>
+                                        <button onClick={() => onNavigate('dashboard')} className="hover:text-blue-200 transition-colors text-lg font-medium px-4 py-2 rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400">
+                                            <i className="fas fa-tachometer-alt mr-2"></i> Dashboard
+                                        </button>
+                                    </li>
+                                    <li>
+                                        <button onClick={() => onNavigate('users')} className="hover:text-blue-200 transition-colors text-lg font-medium px-4 py-2 rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400">
+                                            <i className="fas fa-users-cog mr-2"></i> Usuários
+                                        </button>
+                                    </li>
+                                    <li>
+                                        <button onClick={() => onNavigate('profiles')} className="hover:text-blue-200 transition-colors text-lg font-medium px-4 py-2 rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400">
+                                            <i className="fas fa-id-badge mr-2"></i> Perfis de Acesso
+                                        </button>
+                                    </li>
+                                    <li>
+                                        <button onClick={() => onNavigate('logs')} className="hover:text-blue-200 transition-colors text-lg font-medium px-4 py-2 rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400">
+                                            <i className="fas fa-stream mr-2"></i> Monitoramento de Logs
+                                        </button>
+                                    </li>
+                                    <li>
+                                        <button onClick={() => onNavigate('alerts')} className="hover:text-blue-200 transition-colors text-lg font-medium px-4 py-2 rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400">
+                                            <i className="fas fa-bell mr-2"></i> Alertas
+                                        </button>
+                                    </li>
+                                    <li>
+                                        <button onClick={() => onNavigate('reports')} className="hover:text-blue-200 transition-colors text-lg font-medium px-4 py-2 rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400">
+                                            <i className="fas fa-file-alt mr-2"></i> Relatórios
+                                        </button>
+                                    </li>
+                                    <li>
+                                        <button onClick={() => onNavigate('incidentHistory')} className="hover:text-blue-200 transition-colors text-lg font-medium px-4 py-2 rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400">
+                                            <i className="fas fa-history mr-2"></i> Histórico de Incidentes
+                                        </button>
+                                    </li>
+                                    <li>
+                                        <button onClick={onLogout} className="bg-red-500 text-white px-4 py-2 rounded-lg shadow-md hover:bg-red-600 transition-colors focus:outline-none focus:ring-2 focus:ring-red-400">
+                                            <i className="fas fa-sign-out-alt mr-2"></i> Sair
+                                        </button>
+                                    </li>
+                                </ul>
+                            </nav>
+                        )}
+                    </div>
+                </header>
+            );
+        };
+
+        const AddUserForm = ({ onSaveUser, onCancel }) => {
+            const [name, setName] = useState('');
+            const [email, setEmail] = useState('');
+            const [profile, setProfile] = useState('');
+            const [resetPassword, setResetPassword] = useState(false);
+            const [errors, setErrors] = useState({});
+
+            const availableProfiles = ['Gestor SOC', 'Analista de Segurança (Nível 1)', 'Analista de Segurança (Nível 2)', 'Especialista Forense', 'Analista de Risco', 'DPO'];
+
+            const validateForm = () => {
+                const newErrors = {};
+                if (!name.trim()) {
+                    newErrors.name = 'Nome é obrigatório.';
+                }
+                if (!email.trim()) {
+                    newErrors.email = 'E-mail é obrigatório.';
+                } else if (!/\S+@\S+\.\S+/.test(email)) {
+                    newErrors.email = 'E-mail inválido.';
+                }
+                if (!profile) {
+                    newErrors.profile = 'Perfil de acesso é obrigatório.';
+                }
+                setErrors(newErrors);
+                return Object.keys(newErrors).length === 0;
+            };
+
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                if (validateForm()) {
+                    const newUser = {
+                        id: generateId(),
+                        name,
+                        email,
+                        profile,
+                        status: 'Ativo' // New users are active by default
+                    };
+                    onSaveUser(newUser);
+                    onCancel(); // Go back to user list after saving
+                }
+            };
+
+            return (
+                <div className="p-8 bg-white rounded-lg shadow-xl max-w-2xl mx-auto">
+                    <h2 className="text-3xl font-semibold mb-6 text-gray-800 border-b-2 border-blue-400 pb-2">
+                        <i className="fas fa-user-plus mr-3"></i> Incluir Novo Usuário
+                    </h2>
+                    <form onSubmit={handleSubmit}>
+                        <div className="mb-4">
+                            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="name">
+                                Nome Completo
+                            </label>
+                            <input
+                                type="text"
+                                id="name"
+                                className={`shadow appearance-none border ${errors.name ? 'border-red-500' : 'border-gray-300'} rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-400`}
+                                placeholder="Nome do Funcionário"
+                                value={name}
+                                onChange={(e) => setName(e.target.value)}
+                            />
+                            {errors.name && <p className="text-red-500 text-xs italic mt-1">{errors.name}</p>}
+                        </div>
+                        <div className="mb-4">
+                            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="email">
+                                E-mail
+                            </label>
+                            <input
+                                type="email"
+                                id="email"
+                                className={`shadow appearance-none border ${errors.email ? 'border-red-500' : 'border-gray-300'} rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-400`}
+                                placeholder="email@empresa.com"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                            />
+                            {errors.email && <p className="text-red-500 text-xs italic mt-1">{errors.email}</p>}
+                        </div>
+                        <div className="mb-4">
+                            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="profile">
+                                Perfil de Acesso
+                            </label>
+                            <select
+                                id="profile"
+                                className={`shadow appearance-none border ${errors.profile ? 'border-red-500' : 'border-gray-300'} rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-400`}
+                                value={profile}
+                                onChange={(e) => setProfile(e.target.value)}
+                            >
+                                <option value="">Selecione um perfil</option>
+                                {availableProfiles.map(p => (
+                                    <option key={p} value={p}>{p}</option>
+                                ))}
+                            </select>
+                            {errors.profile && <p className="text-red-500 text-xs italic mt-1">{errors.profile}</p>}
+                        </div>
+                        <div className="mb-6">
+                            <label className="flex items-center text-gray-700 text-sm font-bold">
+                                <input
+                                    type="checkbox"
+                                    className="form-checkbox h-5 w-5 text-blue-600 rounded"
+                                    checked={resetPassword}
+                                    onChange={(e) => setResetPassword(e.target.checked)}
+                                />
+                                <span className="ml-2">Redefinir Senha (link de redefinição enviado por e-mail)</span>
+                            </label>
+                        </div>
+                        <div className="flex justify-end space-x-4">
+                            <button
+                                type="button"
+                                onClick={onCancel}
+                                className="bg-gray-400 hover:bg-gray-500 text-white font-bold py-3 px-6 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400 shadow-md transition-colors"
+                            >
+                                <i className="fas fa-times-circle mr-2"></i> Cancelar
+                            </button>
+                            <button
+                                type="submit"
+                                className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 shadow-md transition-colors"
+                            >
+                                <i className="fas fa-save mr-2"></i> Salvar Usuário
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            );
+        };
+
+
+        const UserManagement = () => {
+            const [users, setUsers] = useState(initialUsers);
+            const [searchTerm, setSearchTerm] = useState('');
+            const [selectedProfile, setSelectedProfile] = useState('');
+            const [showAddUserForm, setShowAddUserForm] = useState(false);
+
+            const profiles = [...new Set(initialUsers.map(user => user.profile))];
+
+            const handleSaveNewUser = (newUser) => {
+                setUsers(prevUsers => [...prevUsers, newUser]);
+            };
+
+            const filteredUsers = users.filter(user => {
+                const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                      user.email.toLowerCase().includes(searchTerm.toLowerCase());
+                const matchesProfile = selectedProfile === '' || user.profile === selectedProfile;
+                return matchesSearch && matchesProfile;
+            });
+
+            if (showAddUserForm) {
+                return <AddUserForm onSaveUser={handleSaveNewUser} onCancel={() => setShowAddUserForm(false)} />;
+            }
+
+            return (
+                <div className="p-8">
+                    <h2 className="text-3xl font-semibold mb-6 text-gray-800 border-b-2 border-blue-400 pb-2">
+                        <i className="fas fa-users-cog mr-3"></i> Gerenciamento de Usuários
+                    </h2>
+
+                    <div className="flex items-center space-x-4 mb-6">
+                        <input
+                            type="text"
+                            placeholder="Buscar por nome ou e-mail..."
+                            className="p-3 border border-gray-300 rounded-lg shadow-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                        <select
+                            className="p-3 border border-gray-300 rounded-lg shadow-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
+                            value={selectedProfile}
+                            onChange={(e) => setSelectedProfile(e.target.value)}
+                        >
+                            <option value="">Todos os Perfis</option>
+                            {profiles.map(profile => (
+                                <option key={profile} value={profile}>{profile}</option>
+                            ))}
+                        </select>
+                        <button
+                            onClick={() => setShowAddUserForm(true)}
+                            className="bg-blue-600 text-white px-5 py-3 rounded-lg shadow-md hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400"
+                        >
+                            <i className="fas fa-user-plus mr-2"></i> Incluir Funcionário
+                        </button>
+                    </div>
+
+                    <div className="bg-white p-6 rounded-lg shadow-xl scroll-container">
+                        {filteredUsers.length === 0 ? (
+                            <p className="text-gray-600 text-center py-8">Nenhum usuário encontrado com os filtros aplicados.</p>
+                        ) : (
+                            <table className="min-w-full divide-y divide-gray-200">
+                                <thead className="bg-gray-50">
+                                    <tr>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider rounded-tl-lg">ID</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nome</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">E-mail</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Perfil</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider rounded-tr-lg">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="bg-white divide-y divide-gray-200">
+                                    {filteredUsers.map((user) => (
+                                        <tr key={user.id} className="hover:bg-gray-50 transition-colors">
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{user.id.substring(0, 6)}...</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{user.name}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{user.email}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{user.profile}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                                <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                                                    user.status === 'Ativo' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                                                }`}>
+                                                    {user.status}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        )}
+                    </div>
+                </div>
+            );
+        };
+
+        const ProfileManagement = () => {
+            const [profiles, setProfiles] = useState(initialProfiles);
+            const [showAddProfileForm, setShowAddProfileForm] = useState(false);
+
+            const handleSaveNewProfile = (newProfile) => {
+                setProfiles(prevProfiles => [...prevProfiles, newProfile]);
+            };
+
+            const AddProfileForm = ({ onSaveProfile, onCancel }) => {
+                const [profileName, setProfileName] = useState('');
+                const [selectedPermissions, setSelectedPermissions] = useState([]);
+                const [errors, setErrors] = useState({});
+
+                const validateForm = () => {
+                    const newErrors = {};
+                    if (!profileName.trim()) {
+                        newErrors.profileName = 'Nome do perfil é obrigatório.';
+                    }
+                    if (selectedPermissions.length === 0) {
+                        newErrors.permissions = 'Selecione pelo menos uma permissão.';
+                    }
+                    setErrors(newErrors);
+                    return Object.keys(newErrors).length === 0;
+                };
+
+                const handlePermissionChange = (permission) => {
+                    setSelectedPermissions(prev =>
+                        prev.includes(permission)
+                            ? prev.filter(p => p !== permission)
+                            : [...prev, permission]
+                    );
+                };
+
+                const handleSubmit = (e) => {
+                    e.preventDefault();
+                    if (validateForm()) {
+                        const newProfile = {
+                            id: generateId(),
+                            name: profileName,
+                            permissions: selectedPermissions,
+                        };
+                        onSaveProfile(newProfile);
+                        onCancel();
+                    }
+                };
+
+                return (
+                    <div className="p-8 bg-white rounded-lg shadow-xl max-w-2xl mx-auto">
+                        <h2 className="text-3xl font-semibold mb-6 text-gray-800 border-b-2 border-blue-400 pb-2">
+                            <i className="fas fa-id-badge mr-3"></i> Criar Novo Perfil de Acesso
+                        </h2>
+                        <form onSubmit={handleSubmit}>
+                            <div className="mb-4">
+                                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="profileName">
+                                    Nome do Perfil
+                                </label>
+                                <input
+                                    type="text"
+                                    id="profileName"
+                                    className={`shadow appearance-none border ${errors.profileName ? 'border-red-500' : 'border-gray-300'} rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-400`}
+                                    placeholder="Ex: Analista de Segurança Nível 1"
+                                    value={profileName}
+                                    onChange={(e) => setProfileName(e.target.value)}
+                                />
+                                {errors.profileName && <p className="text-red-500 text-xs italic mt-1">{errors.profileName}</p>}
+                            </div>
+                            <div className="mb-4">
+                                <label className="block text-gray-700 text-sm font-bold mb-2">
+                                    Permissões
+                                </label>
+                                <div className={`grid grid-cols-2 gap-3 p-4 border ${errors.permissions ? 'border-red-500' : 'border-gray-300'} rounded-lg bg-gray-50`}>
+                                    {availablePermissions.map(permission => (
+                                        <label key={permission} className="flex items-center text-gray-700 text-sm">
+                                            <input
+                                                type="checkbox"
+                                                className="form-checkbox h-5 w-5 text-blue-600 rounded"
+                                                checked={selectedPermissions.includes(permission)}
+                                                onChange={() => handlePermissionChange(permission)}
+                                            />
+                                            <span className="ml-2">{permission}</span>
+                                        </label>
+                                    ))}
+                                </div>
+                                {errors.permissions && <p className="text-red-500 text-xs italic mt-1">{errors.permissions}</p>}
+                            </div>
+                            <div className="flex justify-end space-x-4">
+                                <button
+                                    type="button"
+                                    onClick={onCancel}
+                                    className="bg-gray-400 hover:bg-gray-500 text-white font-bold py-3 px-6 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400 shadow-md transition-colors"
+                                >
+                                    <i className="fas fa-times-circle mr-2"></i> Cancelar
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 shadow-md transition-colors"
+                                >
+                                    <i className="fas fa-save mr-2"></i> Salvar Perfil
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                );
+            };
+
+
+            if (showAddProfileForm) {
+                return <AddProfileForm onSaveProfile={handleSaveNewProfile} onCancel={() => setShowAddProfileForm(false)} />;
+            }
+
+            return (
+                <div className="p-8">
+                    <h2 className="text-3xl font-semibold mb-6 text-gray-800 border-b-2 border-blue-400 pb-2">
+                        <i className="fas fa-id-badge mr-3"></i> Gerenciamento de Perfis de Acesso
+                    </h2>
+
+                    <div className="flex justify-end mb-6">
+                        <button
+                            onClick={() => setShowAddProfileForm(true)}
+                            className="bg-blue-600 text-white px-5 py-3 rounded-lg shadow-md hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400"
+                        >
+                            <i className="fas fa-plus-circle mr-2"></i> Criar Novo Perfil
+                        </button>
+                    </div>
+
+                    <div className="bg-white p-6 rounded-lg shadow-xl scroll-container">
+                        {profiles.length === 0 ? (
+                            <p className="text-gray-600 text-center py-8">Nenhum perfil de acesso encontrado.</p>
+                        ) : (
+                            <table className="min-w-full divide-y divide-gray-200">
+                                <thead className="bg-gray-50">
+                                    <tr>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider rounded-tl-lg">ID</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nome do Perfil</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Permissões</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="bg-white divide-y divide-gray-200">
+                                    {profiles.map((profile) => (
+                                        <tr key={profile.id} className="hover:bg-gray-50 transition-colors">
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{profile.id.substring(0, 6)}...</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{profile.name}</td>
+                                            <td className="px-6 py-4 text-sm text-gray-600">
+                                                {profile.permissions.length > 0 ? profile.permissions.join(', ') : 'Nenhuma permissão'}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        )}
+                    </div>
+                </div>
+            );
+        };
+
+        const MonitoringPointConfiguration = ({ onCancel, onSavePoint }) => {
+            const [name, setName] = useState('');
+            const [ip, setIp] = useState('');
+            const [port, setPort] = useState('');
+            const [status, setStatus] = useState('');
+            const [os, setOs] = useState('');
+            const [validationMessage, setValidationMessage] = useState('');
+            const [errors, setErrors] = useState({});
+
+            const availableStatuses = ['Ativo', 'Inativo', 'Com Erro', 'Degradado', 'Manutenção'];
+            const availableOS = ['Linux', 'Windows', 'macOS', 'Outro'];
+
+            const validateForm = () => {
+                const newErrors = {};
+                if (!name.trim()) newErrors.name = 'Nome é obrigatório.';
+                if (!ip.trim()) newErrors.ip = 'IP/Hostname é obrigatório.';
+                if (!port.trim()) newErrors.port = 'Porta é obrigatória.';
+                else if (isNaN(port) || parseInt(port) <= 0 || parseInt(port) > 65535) newErrors.port = 'Porta inválida (1-65535).';
+                if (!status) newErrors.status = 'Status é obrigatório.';
+                if (!os) newErrors.os = 'Sistema Operacional é obrigatório.';
+                setErrors(newErrors);
+                return Object.keys(newErrors).length === 0;
+            };
+
+            const handleValidatePort = () => {
+                if (ip.trim() && port.trim()) {
+                    setValidationMessage(`Verificando conectividade com ${ip}:${port}...`);
+                    setTimeout(() => {
+                        const success = Math.random() > 0.3; // Simulate success/failure
+                        if (success) {
+                            setValidationMessage(`Conectividade com ${ip}:${port} estabelecida com sucesso!`);
+                        } else {
+                            setValidationMessage(`Falha ao conectar com ${ip}:${port}. Verifique a rede ou a porta.`);
+                        }
+                    }, 1500);
+                } else {
+                    setValidationMessage('Preencha IP/Hostname e Porta para validar.');
+                }
+            };
+
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                if (validateForm()) {
+                    const newPoint = {
+                        id: generateId(),
+                        name,
+                        ip,
+                        port,
+                        status,
+                        os,
+                    };
+                    onSavePoint(newPoint);
+                    onCancel();
+                }
+            };
+
+            return (
+                <div className="p-8 bg-white rounded-lg shadow-xl max-w-3xl mx-auto">
+                    <h2 className="text-3xl font-semibold mb-6 text-gray-800 border-b-2 border-blue-400 pb-2">
+                        <i className="fas fa-network-wired mr-3"></i> Configurar Ponto de Monitoramento
+                    </h2>
+                    <form onSubmit={handleSubmit}>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <div>
+                                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="pointName">
+                                    Nome do Ponto
+                                </label>
+                                <input
+                                    type="text"
+                                    id="pointName"
+                                    className={`shadow appearance-none border ${errors.name ? 'border-red-500' : 'border-gray-300'} rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-400`}
+                                    placeholder="Ex: Servidor Web Principal"
+                                    value={name}
+                                    onChange={(e) => setName(e.target.value)}
+                                />
+                                {errors.name && <p className="text-red-500 text-xs italic mt-1">{errors.name}</p>}
+                            </div>
+                            <div>
+                                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="ip">
+                                    Endereço IP / Hostname
+                                </label>
+                                <input
+                                    type="text"
+                                    id="ip"
+                                    className={`shadow appearance-none border ${errors.ip ? 'border-red-500' : 'border-gray-300'} rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-400`}
+                                    placeholder="Ex: 192.168.1.1 ou server.domain.com"
+                                    value={ip}
+                                    onChange={(e) => setIp(e.target.value)}
+                                />
+                                {errors.ip && <p className="text-red-500 text-xs italic mt-1">{errors.ip}</p>}
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <div>
+                                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="port">
+                                    Porta de Escuta
+                                </label>
+                                <input
+                                    type="number"
+                                    id="port"
+                                    className={`shadow appearance-none border ${errors.port ? 'border-red-500' : 'border-gray-300'} rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-400`}
+                                    placeholder="Ex: 514 (Syslog)"
+                                    value={port}
+                                    onChange={(e) => setPort(e.target.value)}
+                                />
+                                {errors.port && <p className="text-red-500 text-xs italic mt-1">{errors.port}</p>}
+                            </div>
+                            <div className="flex items-end">
+                                <button
+                                    type="button"
+                                    onClick={handleValidatePort}
+                                    className="bg-purple-600 text-white px-5 py-3 rounded-lg shadow-md hover:bg-purple-700 transition-colors focus:outline-none focus:ring-2 focus:ring-purple-400 w-full"
+                                >
+                                    <i className="fas fa-check-circle mr-2"></i> Validar Porta
+                                </button>
+                            </div>
+                        </div>
+                        {validationMessage && (
+                            <p className="text-sm italic text-gray-600 mb-4">{validationMessage}</p>
+                        )}
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                            <div>
+                                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="status">
+                                    Status
+                                </label>
+                                <select
+                                    id="status"
+                                    className={`shadow appearance-none border ${errors.status ? 'border-red-500' : 'border-gray-300'} rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-400`}
+                                    value={status}
+                                    onChange={(e) => setStatus(e.target.value)}
+                                >
+                                    <option value="">Selecione um status</option>
+                                    {availableStatuses.map(s => (
+                                        <option key={s} value={s}>{s}</option>
+                                    ))}
+                                </select>
+                                {errors.status && <p className="text-red-500 text-xs italic mt-1">{errors.status}</p>}
+                            </div>
+                            <div>
+                                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="os">
+                                    Sistema Operacional
+                                </label>
+                                <select
+                                    id="os"
+                                    className={`shadow appearance-none border ${errors.os ? 'border-red-500' : 'border-gray-300'} rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-400`}
+                                    value={os}
+                                    onChange={(e) => setOs(e.target.value)}
+                                >
+                                    <option value="">Selecione um S.O.</option>
+                                    {availableOS.map(o => (
+                                        <option key={o} value={o}>{o}</option>
+                                    ))}
+                                </select>
+                                {errors.os && <p className="text-red-500 text-xs italic mt-1">{errors.os}</p>}
+                            </div>
+                        </div>
+
+                        <div className="flex justify-end space-x-4">
+                            <button
+                                type="button"
+                                onClick={onCancel}
+                                className="bg-gray-400 hover:bg-gray-500 text-white font-bold py-3 px-6 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400 shadow-md transition-colors"
+                            >
+                                <i className="fas fa-times-circle mr-2"></i> Cancelar
+                            </button>
+                            <button
+                                type="submit"
+                                className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 shadow-md transition-colors"
+                            >
+                                <i className="fas fa-save mr-2"></i> Salvar Ponto
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            );
+        };
+
+
+        const LogMonitoring = () => {
+            const [logs, setLogs] = useState(initialLogs);
+            const [showMonitoringConfig, setShowMonitoringConfig] = useState(false);
+            const [monitoringPoints, setMonitoringPoints] = useState(initialMonitoringPoints);
+            const [filterSeverity, setFilterSeverity] = useState('');
+            const [filterType, setFilterType] = useState('');
+            const [filterPointStatus, setFilterPointStatus] = useState('');
+            const [filterPointIP, setFilterPointIP] = useState('');
+            const [filterPointOS, setFilterPointOS] = useState('');
+
+
+            useEffect(() => {
+                const interval = setInterval(() => {
+                    setLogs(prevLogs => [generateLog('Login', Math.random() < 0.2 ? 'Crítico' : 'Info'), ...prevLogs].slice(0, 50));
+                }, 3000); // Add a new log every 3 seconds
+
+                return () => clearInterval(interval);
+            }, []);
+
+            const handleSaveMonitoringPoint = (newPoint) => {
+                setMonitoringPoints(prevPoints => [...prevPoints, newPoint]);
+            };
+
+            const filteredLogs = logs.filter(log => {
+                const matchesSeverity = filterSeverity === '' || log.severity === filterSeverity;
+                const matchesType = filterType === '' || log.type === filterType;
+                return matchesSeverity && matchesType;
+            });
+
+            const filteredMonitoringPoints = monitoringPoints.filter(point => {
+                const matchesStatus = filterPointStatus === '' || point.status === filterPointStatus;
+                const matchesIP = filterPointIP === '' || point.ip.includes(filterPointIP) || point.name.toLowerCase().includes(filterPointIP.toLowerCase());
+                const matchesOS = filterPointOS === '' || point.os === filterPointOS;
+                return matchesStatus && matchesIP && matchesOS;
+            });
+
+
+            if (showMonitoringConfig) {
+                return <MonitoringPointConfiguration onSavePoint={handleSaveMonitoringPoint} onCancel={() => setShowMonitoringConfig(false)} />;
+            }
+
+            return (
+                <div className="p-8">
+                    <h2 className="text-3xl font-semibold mb-6 text-gray-800 border-b-2 border-blue-400 pb-2">
+                        <i className="fas fa-stream mr-3"></i> Monitoramento de Logs em Tempo Real
+                    </h2>
+
+                    <div className="flex items-center space-x-4 mb-6">
+                        <select
+                            className="p-3 border border-gray-300 rounded-lg shadow-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
+                            value={filterSeverity}
+                            onChange={(e) => setFilterSeverity(e.target.value)}
+                        >
+                            <option value="">Todas as Severidades</option>
+                            <option value="Info">Info</option>
+                            <option value="Baixo">Baixo</option>
+                            <option value="Médio">Médio</option>
+                            <option value="Alto">Alto</option>
+                            <option value="Crítico">Crítico</option>
+                        </select>
+                        <select
+                            className="p-3 border border-gray-300 rounded-lg shadow-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
+                            value={filterType}
+                            onChange={(e) => setFilterType(e.target.value)}
+                        >
+                            <option value="">Todos os Tipos</option>
+                            <option value="Login">Login</option>
+                            <option value="Acesso">Acesso</option>
+                            <option value="Configuração">Configuração</option>
+                            <option value="Dados">Dados</option>
+                        </select>
+                        <button
+                            onClick={() => setShowMonitoringConfig(true)}
+                            className="bg-green-600 text-white px-5 py-3 rounded-lg shadow-md hover:bg-green-700 transition-colors focus:outline-none focus:ring-2 focus:ring-green-400"
+                        >
+                            <i className="fas fa-cog mr-2"></i> Configurar Ponto de Monitoramento
+                        </button>
+                    </div>
+
+                    <div className="bg-white p-6 rounded-lg shadow-xl mb-8">
+                        <h3 className="text-2xl font-semibold mb-4 text-gray-800 border-b border-gray-200 pb-2">
+                            Pontos de Monitoramento
+                        </h3>
+                        <div className="flex items-center space-x-4 mb-4">
+                            <input
+                                type="text"
+                                placeholder="Filtrar por IP/Nome..."
+                                className="p-3 border border-gray-300 rounded-lg shadow-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                value={filterPointIP}
+                                onChange={(e) => setFilterPointIP(e.target.value)}
+                            />
+                            <select
+                                className="p-3 border border-gray-300 rounded-lg shadow-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                value={filterPointStatus}
+                                onChange={(e) => setFilterPointStatus(e.target.value)}
+                            >
+                                <option value="">Todos os Status</option>
+                                <option value="Ativo">Ativo</option>
+                                <option value="Inativo">Inativo</option>
+                                <option value="Com Erro">Com Erro</option>
+                                <option value="Degradado">Degradado</option>
+                                <option value="Manutenção">Manutenção</option>
+                            </select>
+                            <select
+                                className="p-3 border border-gray-300 rounded-lg shadow-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                value={filterPointOS}
+                                onChange={(e) => setFilterPointOS(e.target.value)}
+                            >
+                                <option value="">Todos os S.O.</option>
+                                <option value="Linux">Linux</option>
+                                <option value="Windows">Windows</option>
+                                <option value="macOS">macOS</option>
+                                <option value="Outro">Outro</option>
+                            </select>
+                        </div>
+                        {filteredMonitoringPoints.length === 0 ? (
+                            <p className="text-gray-600 text-center py-4">Nenhum ponto de monitoramento encontrado com os filtros aplicados.</p>
+                        ) : (
+                            <table className="min-w-full divide-y divide-gray-200">
+                                <thead className="bg-gray-50">
+                                    <tr>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider rounded-tl-lg">Nome</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">IP/Hostname</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Porta</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider rounded-tr-lg">S.O.</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="bg-white divide-y divide-gray-200">
+                                    {filteredMonitoringPoints.map((point) => (
+                                        <tr key={point.id} className="hover:bg-gray-50 transition-colors">
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{point.name}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{point.ip}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{point.port}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                                <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                                                    point.status === 'Ativo' ? 'bg-green-100 text-green-800' :
+                                                    point.status === 'Com Erro' ? 'bg-red-100 text-red-800' :
+                                                    'bg-yellow-100 text-yellow-800'
+                                                }`}>
+                                                    {point.status}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{point.os}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        )}
+                    </div>
+
+                    <h3 className="text-2xl font-semibold mb-4 text-gray-800 border-b border-gray-200 pb-2">
+                        Logs Recentes
+                    </h3>
+                    <div className="bg-white p-6 rounded-lg shadow-xl scroll-container">
+                        {filteredLogs.length === 0 ? (
+                            <p className="text-gray-600 text-center py-8">Nenhum log encontrado com os filtros aplicados.</p>
+                        ) : (
+                            <table className="min-w-full divide-y divide-gray-200">
+                                <thead className="bg-gray-50">
+                                    <tr>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider rounded-tl-lg">Timestamp</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">IP de Origem</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Usuário</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Atividade</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider rounded-tr-lg">Severidade</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="bg-white divide-y divide-gray-200">
+                                    {filteredLogs.map((log) => (
+                                        <tr key={log.id} className="hover:bg-gray-50 transition-colors">
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{log.timestamp}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{log.ip}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{log.user}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{log.activity}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                                <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                                                    log.status === 'SUCESSO' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                                                }`}>
+                                                    {log.status}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                                <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                                                    log.severity === 'Crítico' ? 'bg-red-200 text-red-900' :
+                                                    log.severity === 'Alto' ? 'bg-orange-200 text-orange-900' :
+                                                    log.severity === 'Médio' ? 'bg-yellow-200 text-yellow-900' :
+                                                    'bg-blue-200 text-blue-900'
+                                                }`}>
+                                                    {log.severity}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        )}
+                    </div>
+                </div>
+            );
+        };
+
+        const ThreatDashboard = () => {
+            const [threatSummary, setThreatSummary] = useState(getThreatSummary());
+            const [overallTrendChartData, setOverallTrendChartData] = useState([]); // Renamed for clarity
+            const [incidentTypeData, setIncidentTypeData] = useState({});
+            const [summaryReportText, setSummaryReportText] = useState('');
+
+            // New states for evolution chart
+            const [evolutionPeriod1, setEvolutionPeriod1] = useState('monthly');
+            const [evolutionPeriod2, setEvolutionPeriod2] = useState('monthly');
+            const [evolutionChartData1, setEvolutionChartData1] = useState([]);
+            const [evolutionChartData2, setEvolutionChartData2] = useState([]);
+            const [maxEvolutionIncidents, setMaxEvolutionIncidents] = useState(1);
+
+            const evolutionPeriodsOptions = {
+                'daily': 'Últimos 7 Dias',
+                'weekly': 'Últimas 4 Semanas',
+                'monthly': 'Últimos 6 Meses',
+                'quarterly': 'Últimos 4 Trimestres',
+                'yearly': 'Últimos 3 Anos'
+            };
+
+            const getEvolutionChartData = (periodType) => {
+                let data = [];
+                let labels = [];
+                let numPoints = 0;
+
+                const now = new Date();
+
+                switch(periodType) {
+                    case 'daily':
+                        numPoints = 7;
+                        for (let i = numPoints - 1; i >= 0; i--) {
+                            const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
+                            labels.push(`${d.getDate()}/${d.getMonth() + 1}`);
+                        }
+                        break;
+                    case 'weekly':
+                        numPoints = 4;
+                        for (let i = numPoints - 1; i >= 0; i--) {
+                            const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - (i * 7));
+                            labels.push(`Semana ${Math.ceil(d.getDate() / 7)}/${d.getMonth() + 1}`);
+                        }
+                        break;
+                    case 'monthly':
+                        numPoints = 6;
+                        for (let i = numPoints - 1; i >= 0; i--) {
+                            const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+                            labels.push(d.toLocaleString('pt-BR', { month: 'short', year: '2-digit' }));
+                        }
+                        break;
+                    case 'quarterly':
+                        numPoints = 4; // Last 4 quarters
+                        for (let i = numPoints - 1; i >= 0; i--) {
+                            const q = Math.floor((now.getMonth() - (i * 3)) / 3);
+                            const year = now.getFullYear() - (q < 0 ? 1 : 0); // Adjust year if quarter goes to previous year
+                            labels.push(`Q${(q % 4) + 1}/${year % 100}`); // Q1/25, Q2/24 etc.
+                        }
+                        break;
+                    case 'yearly':
+                        numPoints = 3; // Last 3 years
+                        for (let i = numPoints - 1; i >= 0; i--) {
+                            labels.push(`${now.getFullYear() - i}`);
+                        }
+                        break;
+                }
+
+                labels.forEach(label => {
+                    data.push({
+                        label: label,
+                        incidents: Math.floor(Math.random() * 200) + 50
+                    });
+                });
+                return data;
+            };
+
+            const handleGenerateEvolutionChart = () => {
+                const d1 = getEvolutionChartData(evolutionPeriod1);
+                const d2 = getEvolutionChartData(evolutionPeriod2);
+                setEvolutionChartData1(d1);
+                setEvolutionChartData2(d2);
+
+                const allIncidents = [...d1.map(item => item.incidents), ...d2.map(item => item.incidents)];
+                setMaxEvolutionIncidents(Math.max(...allIncidents, 1));
+            };
+
+            const handleExportEvolutionChart = () => {
+                alert('Exportação do Gráfico de Evolução para imagem (PNG/SVG) simulada!');
+            };
+
+            const handleExportEvolutionData = () => {
+                const exportData = {
+                    period1: { name: evolutionPeriodsOptions[evolutionPeriod1], data: evolutionChartData1 },
+                    period2: { name: evolutionPeriodsOptions[evolutionPeriod2], data: evolutionChartData2 },
+                };
+                const filename = `argos_evolution_report_${new Date().toISOString().split('T')[0]}.json`;
+                const dummyContent = JSON.stringify(exportData, null, 2);
+                const blob = new Blob([dummyContent], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                alert(`Exportando dados de evolução para ${filename}! (Simulação)`);
+            };
+
+
+            useEffect(() => {
+                const interval = setInterval(() => {
+                    setThreatSummary(getThreatSummary());
+                    setIncidentTypeData(generateIncidentTypeData());
+                }, 10000);
+
+                setOverallTrendChartData(generateOverallTrendChartData()); // For the original trend chart
+                setIncidentTypeData(generateIncidentTypeData());
+                setSummaryReportText(generateSimulatedSummaryReport());
+                handleGenerateEvolutionChart(); // Initial generation of evolution chart
+
+                return () => clearInterval(interval);
+            }, []);
+
+            const getColorClass = (severity) => {
+                switch (severity) {
+                    case 'Crítico': return 'bg-red-500';
+                    case 'Alto': return 'bg-orange-500';
+                    case 'Médio': return 'bg-yellow-500';
+                    case 'Baixo': return 'bg-blue-500';
+                    default: return 'bg-gray-400';
+                }
+            };
+
+            const maxOverallIncidents = Math.max(...overallTrendChartData.map(d => d.incidents), 1);
+            const maxIncidentTypeCount = Math.max(...Object.values(incidentTypeData), 1);
+
+
+            return (
+                <div className="p-8">
+                    <h2 className="text-3xl font-semibold mb-6 text-gray-800 border-b-2 border-blue-400 pb-2">
+                        <i className="fas fa-tachometer-alt mr-3"></i> Dashboard de Ameaças por Severidade
+                    </h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        {Object.entries(threatSummary).map(([severity, count]) => (
+                            <div key={severity} className={`relative p-6 rounded-lg shadow-xl text-white ${getColorClass(severity)} flex flex-col justify-between items-start transition-all duration-300 hover:scale-105`}>
+                                <div className="absolute top-4 right-4 text-4xl opacity-20">
+                                    {severity === 'Crítico' && <i className="fas fa-exclamation-triangle"></i>}
+                                    {severity === 'Alto' && <i className="fas fa-fire"></i>}
+                                    {severity === 'Médio' && <i className="fas fa-bell"></i>}
+                                    {severity === 'Baixo' && <i className="fas fa-info-circle"></i>}
+                                </div>
+                                <h3 className="text-2xl font-bold mb-2">{severity}</h3>
+                                <p className="text-5xl font-extrabold">{count}</p>
+                                <span className="text-sm opacity-80">Ameaças Ativas</span>
+                            </div>
+                        ))}
+                    </div>
+
+                    <div className="mt-8 bg-white p-6 rounded-lg shadow-xl">
+                        <h3 className="text-2xl font-semibold mb-4 text-gray-800 border-b border-gray-200 pb-2">Tendências de Incidentes (Gráfico Simulado)</h3>
+                        <div className="bar-chart-container">
+                            {overallTrendChartData.map((dataPoint, index) => (
+                                <div key={index} className="flex-1 h-full flex flex-col justify-end" style={{ height: `${(dataPoint.incidents / maxOverallIncidents) * 100}%` }}>
+                                    <div className="bar" style={{ height: '100%' }}> {/* Inner bar to apply height */}
+                                        <span className="bar-value">{dataPoint.incidents}</span>
+                                    </div>
+                                    <span className="bar-label">{dataPoint.month}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="mt-8 bg-white p-6 rounded-lg shadow-xl">
+                        <h3 className="text-2xl font-semibold mb-4 text-gray-800 border-b border-gray-200 pb-2">Classificação de Incidentes por Tipo (Últimas 24h - Simulado)</h3>
+                        <div className="incident-type-bar-chart-container">
+                            {Object.entries(incidentTypeData).map(([type, count], index) => (
+                                <div key={index} className="flex-1 h-full flex flex-col justify-end" style={{ height: `${(count / maxIncidentTypeCount) * 100}%` }}>
+                                    <div className="incident-type-bar" style={{ height: '100%' }}>
+                                        <span className="incident-type-bar-value">{count}</span>
+                                    </div>
+                                    <span className="incident-type-bar-label text-center">{type}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="mt-8 bg-white p-6 rounded-lg shadow-xl">
+                        <h3 className="text-2xl font-semibold mb-4 text-gray-800 border-b border-gray-200 pb-2">Evolução do Volume Total de Incidentes (Comparação de Períodos)</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end mb-6">
+                            <div>
+                                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="evolutionPeriod1">
+                                    Período 1
+                                </label>
+                                <select
+                                    id="evolutionPeriod1"
+                                    className="p-3 border border-gray-300 rounded-lg shadow-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                    value={evolutionPeriod1}
+                                    onChange={(e) => setEvolutionPeriod1(e.target.value)}
+                                >
+                                    {Object.entries(evolutionPeriodsOptions).map(([key, value]) => (
+                                        <option key={key} value={key}>{value}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="evolutionPeriod2">
+                                    Período 2
+                                </label>
+                                <select
+                                    id="evolutionPeriod2"
+                                    className="p-3 border border-gray-300 rounded-lg shadow-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                    value={evolutionPeriod2}
+                                    onChange={(e) => setEvolutionPeriod2(e.target.value)}
+                                >
+                                    {Object.entries(evolutionPeriodsOptions).map(([key, value]) => (
+                                        <option key={key} value={key}>{value}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="flex justify-end">
+                                <button
+                                    onClick={handleGenerateEvolutionChart}
+                                    className="bg-blue-600 text-white px-5 py-3 rounded-lg shadow-md hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400 w-full md:w-auto"
+                                >
+                                    <i className="fas fa-chart-line mr-2"></i> Gerar Gráfico de Evolução
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="comparison-chart-container">
+                            {evolutionChartData1.length > 0 && evolutionChartData2.length > 0 ? (
+                                evolutionChartData1.map((item, index) => (
+                                    <div key={index} className="comparison-bar-group">
+                                        <div className="comparison-bar-pair">
+                                            <div
+                                                className="comparison-bar period1"
+                                                style={{ height: `${(item.incidents / maxEvolutionIncidents) * 100}%` }}
+                                            >
+                                                <span className="comparison-bar-value">{item.incidents}</span>
+                                            </div>
+                                            {evolutionChartData2[index] && (
+                                                <div
+                                                    className="comparison-bar period2"
+                                                    style={{ height: `${(evolutionChartData2[index].incidents / maxEvolutionIncidents) * 100}%` }}
+                                                >
+                                                    <span className="comparison-bar-value">{evolutionChartData2[index].incidents}</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                        <span className="comparison-bar-label">{item.label}</span>
+                                    </div>
+                                ))
+                            ) : (
+                                <p className="text-gray-600 text-center w-full py-8">Selecione os períodos e clique em "Gerar Gráfico de Evolução".</p>
+                            )}
+                        </div>
+                        <div className="flex justify-end space-x-4 mt-8">
+                            <button
+                                onClick={handleExportEvolutionChart}
+                                className="bg-purple-600 text-white px-5 py-3 rounded-lg shadow-md hover:bg-purple-700 transition-colors focus:outline-none focus:ring-2 focus:ring-purple-400"
+                            >
+                                <i className="fas fa-image mr-2"></i> Exportar Gráfico (Imagem)
+                            </button>
+                            <button
+                                onClick={handleExportEvolutionData}
+                                className="bg-green-600 text-white px-5 py-3 rounded-lg shadow-md hover:bg-green-700 transition-colors focus:outline-none focus:ring-2 focus:ring-green-400"
+                            >
+                                <i className="fas fa-file-csv mr-2"></i> Exportar Dados (CSV/JSON)
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="mt-8 bg-white p-6 rounded-lg shadow-xl">
+                        <h3 className="2xl font-semibold mb-4 text-gray-800 border-b border-gray-200 pb-2">Análise e Resumo (Relatório Simulado)</h3>
+                        <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">{summaryReportText}</p>
+                    </div>
+                </div>
+            );
+        };
+
+        const LoginPage = ({ onLogin }) => {
+            const [email, setEmail] = useState('');
+            const [password, setPassword] = useState('');
+            const [error, setError] = useState('');
+
+            const handleLogin = (e) => {
+                e.preventDefault();
+                // Simulated login: 'gestor@argos.com' with any password
+                if (email === 'gestor@argos.com') { // Password check is minimal for prototype
+                    onLogin(true); // Simulate successful login
+                } else {
+                    setError('Credenciais inválidas. Use gestor@argos.com para login.');
+                }
+            };
+
+            return (
+                <div className="min-h-screen flex items-center justify-center bg-gray-100">
+                    <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md">
+                        <h2 className="text-3xl font-bold text-center text-blue-700 mb-6">
+                            <i className="fas fa-user-circle mr-3"></i> Login
+                        </h2>
+                        <form onSubmit={handleLogin}>
+                            <div className="mb-4">
+                                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="email">
+                                    E-mail
+                                </label>
+                                <input
+                                    type="email"
+                                    id="email"
+                                    className="shadow appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                    placeholder="gestor@argos.com"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    required
+                                />
+                            </div>
+                            <div className="mb-6">
+                                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="password">
+                                    Senha
+                                </label>
+                                <input
+                                    type="password"
+                                    id="password"
+                                    className="shadow appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 mb-3 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                    placeholder="********"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    required
+                                />
+                            </div>
+                            {error && (
+                                <p className="text-red-500 text-xs italic mb-4">{error}</p>
+                            )}
+                            <div className="flex items-center justify-between">
+                                <button
+                                    type="submit"
+                                    className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 shadow-md transition-colors w-full"
+                                >
+                                    Entrar
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            );
+        };
+
+        // AddAlertRuleForm Component
+        const AddAlertRuleForm = ({ onSaveRule, onCancel }) => {
+            const [name, setName] = useState('');
+            const [description, setDescription] = useState('');
+            const [severity, setSeverity] = useState('');
+            const [activityKeyword, setActivityKeyword] = useState('');
+            const [cooldown, setCooldown] = useState('');
+            const [errors, setErrors] = useState({});
+
+            const availableSeverities = ['Baixo', 'Médio', 'Alto', 'Crítico'];
+
+            const validateForm = () => {
+                const newErrors = {};
+                if (!name.trim()) newErrors.name = 'Nome da regra é obrigatório.';
+                if (!description.trim()) newErrors.description = 'Descrição é obrigatória.';
+                if (!severity) newErrors.severity = 'Nível de severidade é obrigatório.';
+                if (!activityKeyword.trim()) newErrors.activityKeyword = 'Palavra-chave de atividade é obrigatória.';
+                if (cooldown === '' || isNaN(cooldown) || parseInt(cooldown) < 0) newErrors.cooldown = 'Cooldown inválido.';
+                setErrors(newErrors);
+                return Object.keys(newErrors).length === 0;
+            };
+
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                if (validateForm()) {
+                    const newRule = {
+                        id: generateId(),
+                        name,
+                        description,
+                        severity,
+                        activityKeyword,
+                        cooldown: parseInt(cooldown),
+                    };
+                    onSaveRule(newRule);
+                    onCancel();
+                }
+            };
+
+            return (
+                <div className="p-8 bg-white rounded-lg shadow-xl max-w-2xl mx-auto">
+                    <h2 className="text-3xl font-semibold mb-6 text-gray-800 border-b-2 border-blue-400 pb-2">
+                        <i className="fas fa-plus-circle mr-3"></i> Criar Nova Regra de Alerta
+                    </h2>
+                    <form onSubmit={handleSubmit}>
+                        <div className="mb-4">
+                            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="ruleName">
+                                Nome da Regra
+                            </label>
+                            <input
+                                type="text"
+                                id="ruleName"
+                                className={`shadow appearance-none border ${errors.name ? 'border-red-500' : 'border-gray-300'} rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-400`}
+                                placeholder="Ex: Alerta de Força Bruta"
+                                value={name}
+                                onChange={(e) => setName(e.target.value)}
+                            />
+                            {errors.name && <p className="text-red-500 text-xs italic mt-1">{errors.name}</p>}
+                        </div>
+                        <div className="mb-4">
+                            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="description">
+                                Descrição
+                            </label>
+                            <textarea
+                                id="description"
+                                rows="3"
+                                className={`shadow appearance-none border ${errors.description ? 'border-red-500' : 'border-gray-300'} rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-400`}
+                                placeholder="Descreva a condição que irá disparar este alerta."
+                                value={description}
+                                onChange={(e) => setDescription(e.target.value)}
+                            ></textarea>
+                            {errors.description && <p className="text-red-500 text-xs italic mt-1">{errors.description}</p>}
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <div>
+                                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="severity">
+                                    Nível de Severidade
+                                </label>
+                                <select
+                                    id="severity"
+                                    className={`shadow appearance-none border ${errors.severity ? 'border-red-500' : 'border-gray-300'} rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-400`}
+                                    value={severity}
+                                    onChange={(e) => setSeverity(e.target.value)}
+                                >
+                                    <option value="">Selecione a severidade</option>
+                                    {availableSeverities.map(s => (
+                                        <option key={s} value={s}>{s}</option>
+                                    ))}
+                                </select>
+                                {errors.severity && <p className="text-red-500 text-xs italic mt-1">{errors.severity}</p>}
+                            </div>
+                            <div>
+                                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="cooldown">
+                                    Cooldown (segundos)
+                                </label>
+                                <input
+                                    type="number"
+                                    id="cooldown"
+                                    className={`shadow appearance-none border ${errors.cooldown ? 'border-red-500' : 'border-gray-300'} rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-400`}
+                                    placeholder="Ex: 300 (5 minutos)"
+                                    value={cooldown}
+                                    onChange={(e) => setCooldown(e.target.value)}
+                                />
+                                {errors.cooldown && <p className="text-red-500 text-xs italic mt-1">{errors.cooldown}</p>}
+                        </div>
+                        </div>
+                        <div className="mb-6">
+                            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="activityKeyword">
+                                Palavra-chave de Atividade (para simulação)
+                            </label>
+                            <input
+                                type="text"
+                                id="activityKeyword"
+                                className={`shadow appearance-none border ${errors.activityKeyword ? 'border-red-500' : 'border-gray-300'} rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-400`}
+                                placeholder="Ex: FALHA DE LOGIN ou IP SUSPEITO"
+                                value={activityKeyword}
+                                onChange={(e) => setActivityKeyword(e.target.value)}
+                            />
+                            {errors.activityKeyword && <p className="text-red-500 text-xs italic mt-1">{errors.activityKeyword}</p>}
+                        </div>
+                        <div className="flex justify-end space-x-4">
+                            <button
+                                type="button"
+                                onClick={onCancel}
+                                className="bg-gray-400 hover:bg-gray-500 text-white font-bold py-3 px-6 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400 shadow-md transition-colors"
+                            >
+                                <i className="fas fa-times-circle mr-2"></i> Cancelar
+                            </button>
+                            <button
+                                type="submit"
+                                className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 shadow-md transition-colors"
+                            >
+                                <i className="fas fa-save mr-2"></i> Salvar Regra
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            );
+        };
+
+        // AlertManagement component
+        const AlertManagement = () => {
+            const [alertRules, setAlertRules] = useState(initialAlertRules);
+            const [triggeredAlerts, setTriggeredAlerts] = useState(initialTriggeredAlerts);
+            const [showAddRuleForm, setShowAddRuleForm] = useState(false);
+            const [lastNotificationTimes, setLastNotificationTimes] = useState({}); // Stores {ruleId_activity: timestamp} for cooldown
+
+            // Simulate new logs and check against rules
+            useEffect(() => {
+                const interval = setInterval(() => {
+                    const newLog = generateLog(); // Generate a log, which might be suspicious
+
+                    // Check against alert rules
+                    alertRules.forEach(rule => {
+                        // Simple simulation: if log activity contains rule's keyword
+                        if (newLog.activity.includes(rule.activityKeyword)) {
+                            const now = Date.now();
+                            const key = `${rule.id}_${newLog.activity}`; // Unique key for this rule and activity type
+
+                            // Apply cooldown logic
+                            if (!lastNotificationTimes[key] || (now - lastNotificationTimes[key]) / 1000 > rule.cooldown) {
+                                const newTriggeredAlert = {
+                                    id: generateId(),
+                                    ruleName: rule.name,
+                                    activity: newLog.activity,
+                                    severity: rule.severity,
+                                    timestamp: new Date().toLocaleString('pt-BR'),
+                                    logId: newLog.id, // Reference to the simulated log that triggered it
+                                };
+                                setTriggeredAlerts(prev => [newTriggeredAlert, ...prev].slice(0, 20)); // Keep max 20 alerts
+                                setLastNotificationTimes(prev => ({ ...prev, [key]: now }));
+                                console.log('EMAIL NOTIFICATION SIMULATED:', newTriggeredAlert); // Simulate email notification
+                                // In a real app, this would trigger an actual email service
+                            }
+                        }
+                    });
+                }, 5000); // Check for new logs every 5 seconds
+
+                return () => clearInterval(interval);
+            }, [alertRules, lastNotificationTimes]); // Re-run effect if rules or cooldowns change
+
+
+            const handleSaveNewRule = (newRule) => {
+                setAlertRules(prevRules => [...prevRules, newRule]);
+            };
+
+            const getSeverityColor = (severity) => {
+                switch (severity) {
+                    case 'Crítico': return 'text-red-700 bg-red-100';
+                    case 'Alto': return 'text-orange-700 bg-orange-100';
+                    case 'Médio': return 'text-yellow-700 bg-yellow-100';
+                    case 'Baixo': return 'text-blue-700 bg-blue-100';
+                    default: return 'text-gray-700 bg-gray-100';
+                }
+            };
+
+
+            if (showAddRuleForm) {
+                return <AddAlertRuleForm onSaveRule={handleSaveNewRule} onCancel={() => setShowAddRuleForm(false)} />;
+            }
+
+            return (
+                <div className="p-8">
+                    <h2 className="text-3xl font-semibold mb-6 text-gray-800 border-b-2 border-blue-400 pb-2">
+                        <i className="fas fa-bell mr-3"></i> Gerenciamento de Alertas
+                    </h2>
+
+                    <div className="flex justify-between items-center mb-6">
+                        <h3 className="text-2xl font-medium text-gray-700">Regras de Alerta Configuradas</h3>
+                        <button
+                            onClick={() => setShowAddRuleForm(true)}
+                            className="bg-blue-600 text-white px-5 py-3 rounded-lg shadow-md hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400"
+                        >
+                            <i className="fas fa-plus-circle mr-2"></i> Criar Nova Regra
+                        </button>
+                    </div>
+
+                    <div className="bg-white p-6 rounded-lg shadow-xl scroll-container mb-8">
+                        {alertRules.length === 0 ? (
+                            <p className="text-gray-600 text-center py-8">Nenhuma regra de alerta configurada.</p>
+                        ) : (
+                            <table className="min-w-full divide-y divide-gray-200">
+                                <thead className="bg-gray-50">
+                                    <tr>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider rounded-tl-lg">Nome da Regra</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Severidade</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Palavra-chave</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider rounded-tr-lg">Cooldown (s)</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="bg-white divide-y divide-gray-200">
+                                    {alertRules.map((rule) => (
+                                        <tr key={rule.id} className="hover:bg-gray-50 transition-colors">
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{rule.name}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                                <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getSeverityColor(rule.severity)}`}>
+                                                    {rule.severity}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{rule.activityKeyword}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{rule.cooldown}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        )}
+                    </div>
+
+                    <h3 className="text-2xl font-semibold mb-4 text-gray-800 border-b-2 border-blue-400 pb-2">
+                        <i className="fas fa-exclamation-triangle mr-3"></i> Notificações Recentes
+                    </h3>
+                    <div className="bg-white p-6 rounded-lg shadow-xl scroll-container">
+                        {triggeredAlerts.length === 0 ? (
+                            <p className="text-gray-600 text-center py-8">Nenhuma notificação de alerta recente.</p>
+                        ) : (
+                            <table className="min-w-full divide-y divide-gray-200">
+                                <thead className="bg-gray-50">
+                                    <tr>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider rounded-tl-lg">Timestamp</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Regra Disparada</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Atividade Detectada</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider rounded-tr-lg">Severidade</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="bg-white divide-y divide-gray-200">
+                                    {triggeredAlerts.map((alert) => (
+                                        <tr key={alert.id} className="hover:bg-gray-50 transition-colors">
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{alert.timestamp}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{alert.ruleName}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{alert.activity}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                                <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getSeverityColor(alert.severity)}`}>
+                                                    {alert.severity}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        )}
+                    </div>
+                </div>
+            );
+        };
+
+        const IncidentHistory = () => {
+            const [period1, setPeriod1] = useState('currentMonth');
+            const [period2, setPeriod2] = useState('lastMonth');
+            const [comparisonChartData1, setComparisonChartData1] = useState([]);
+            const [comparisonChartData2, setComparisonChartData2] = useState([]);
+            const [maxCombinedIncidents, setMaxCombinedIncidents] = useState(1);
+            const [detailedIncidents, setDetailedIncidents] = useState([]);
+            const [sortColumn, setSortColumn] = useState(null);
+            const [sortDirection, setSortDirection] = useState('asc');
+            const [filterIP, setFilterIP] = useState('');
+            const [filterUser, setFilterUser] = useState('');
+            const [filterSeverity, setFilterSeverity] = useState('');
+            const [filterActivity, setFilterActivity] = useState('');
+
+            const predefinedPeriods = {
+                'currentMonth': 'Este Mês',
+                'lastMonth': 'Mês Passado',
+                'currentQuarter': 'Este Trimestre',
+                'lastQuarter': 'Trimestre Passado',
+                'currentYear': 'Este Ano',
+                'lastYear': 'Ano Passado',
+            };
+
+            const availableSeverities = ['Baixo', 'Médio', 'Alto', 'Crítico'];
+            const availableIncidentTypes = ['IP Suspeito', 'Acesso Fora de Hora', 'Falha de Login', 'Modificação de Dados', 'Transferência Externa', 'Atividade Maliciosa'];
+
+
+            useEffect(() => {
+                // Initial load of detailed incident data
+                setDetailedIncidents(generateDetailedHistoricalIncidents('currentMonth'));
+                // The comparison chart generation is now handled by a separate function call
+            }, []); // Run only once on component mount
+
+            const handleSort = (column) => {
+                if (sortColumn === column) {
+                    setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+                } else {
+                    setSortColumn(column);
+                    setSortDirection('asc');
+                }
+            };
+
+            const getSortedAndFilteredIncidents = () => {
+                let sortedData = [...detailedIncidents];
+
+                // Apply filters
+                sortedData = sortedData.filter(incident => {
+                    const matchesIP = filterIP === '' || incident.ip.includes(filterIP);
+                    const matchesUser = filterUser === '' || incident.user.toLowerCase().includes(filterUser.toLowerCase());
+                    const matchesSeverity = filterSeverity === '' || incident.severity === filterSeverity;
+                    const matchesActivity = filterActivity === '' || incident.type === filterActivity;
+                    return matchesIP && matchesUser && matchesSeverity && matchesActivity;
+                });
+
+                // Apply sorting
+                if (sortColumn) {
+                    sortedData.sort((a, b) => {
+                        let valA = a[sortColumn];
+                        let valB = b[sortColumn];
+
+                        // Handle date sorting
+                        if (sortColumn === 'timestamp') {
+                            valA = new Date(valA).getTime();
+                            valB = new Date(valB).getTime();
+                        }
+
+                        if (valA < valB) return sortDirection === 'asc' ? -1 : 1;
+                        if (valA > valB) return sortDirection === 'asc' ? 1 : -1;
+                        return 0;
+                    });
+                }
+                return sortedData;
+            };
+
+            const handleGenerateComparisonChart = () => {
+                const d1 = generateComparisonChartData(period1);
+                const d2 = generateComparisonChartData(period2);
+
+                setComparisonChartData1(d1);
+                setComparisonChartData2(d2);
+
+                const allIncidents = [...d1.map(item => item.incidents), ...d2.map(item => item.incidents)];
+                setMaxCombinedIncidents(Math.max(...allIncidents, 1));
+            };
+
+            const handleExportChart = () => {
+                alert('Exportação do gráfico para imagem (PNG/SVG) simulada!');
+                // In a real app, use a library like html2canvas or react-chartjs-2 for actual export
+            };
+
+            const handleExportData = () => {
+                const exportData = getSortedAndFilteredIncidents(); // Export current view
+                const filename = `argos_incidents_history_${new Date().toISOString().split('T')[0]}.json`;
+                const dummyContent = JSON.stringify(exportData, null, 2);
+                const blob = new Blob([dummyContent], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                alert(`Exportando dados para ${filename}! (Simulação)`);
+            };
+
+            const getSeverityColor = (severity) => {
+                switch (severity) {
+                    case 'Crítico': return 'text-red-700 bg-red-100';
+                    case 'Alto': return 'text-orange-700 bg-orange-100';
+                    case 'Médio': return 'text-yellow-700 bg-yellow-100';
+                    case 'Baixo': return 'text-blue-700 bg-blue-100';
+                    default: return 'text-gray-700 bg-gray-100';
+                }
+            };
+
+            const handleClearFilters = () => {
+                setFilterIP('');
+                setFilterUser('');
+                setFilterSeverity('');
+                setFilterActivity('');
+            };
+
+            return (
+                <div className="p-8">
+                    <h2 className="text-3xl font-semibold mb-6 text-gray-800 border-b-2 border-blue-400 pb-2">
+                        <i className="fas fa-history mr-3"></i> Histórico de Incidentes
+                    </h2>
+
+                    <div className="bg-white p-6 rounded-lg shadow-xl mb-8">
+                        <h3 className="text-2xl font-medium text-gray-700 mb-4">Comparar Períodos de Incidentes (Gráfico)</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end mb-6">
+                            <div>
+                                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="period1">
+                                    Período 1
+                                </label>
+                                <select
+                                    id="period1"
+                                    className="p-3 border border-gray-300 rounded-lg shadow-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                    value={period1}
+                                    onChange={(e) => setPeriod1(e.target.value)}
+                                >
+                                    {Object.entries(predefinedPeriods).map(([key, value]) => (
+                                        <option key={key} value={key}>{value}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="period2">
+                                    Período 2
+                                </label>
+                                <select
+                                    id="period2"
+                                    className="p-3 border border-gray-300 rounded-lg shadow-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                    value={period2}
+                                    onChange={(e) => setPeriod2(e.target.value)}
+                                >
+                                    {Object.entries(predefinedPeriods).map(([key, value]) => (
+                                        <option key={key} value={key}>{value}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="flex justify-end">
+                                <button
+                                    onClick={handleGenerateComparisonChart}
+                                    className="bg-blue-600 text-white px-5 py-3 rounded-lg shadow-md hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400 w-full md:w-auto"
+                                >
+                                    <i className="fas fa-chart-bar mr-2"></i> Gerar Gráfico de Comparação
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="comparison-chart-container">
+                            {comparisonChartData1.length > 0 && comparisonChartData2.length > 0 ? (
+                                comparisonChartData1.map((item, index) => (
+                                    <div key={index} className="comparison-bar-group">
+                                        <div className="comparison-bar-pair">
+                                            <div
+                                                className="comparison-bar period1"
+                                                style={{ height: `${(item.incidents / maxCombinedIncidents) * 100}%` }}
+                                            >
+                                                <span className="comparison-bar-value">{item.incidents}</span>
+                                            </div>
+                                            {comparisonChartData2[index] && (
+                                                <div
+                                                    className="comparison-bar period2"
+                                                    style={{ height: `${(comparisonChartData2[index].incidents / maxCombinedIncidents) * 100}%` }}
+                                                >
+                                                    <span className="comparison-bar-value">{comparisonChartData2[index].incidents}</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                        <span className="comparison-bar-label">{item.label}</span>
+                                    </div>
+                                ))
+                            ) : (
+                                <p className="text-gray-600 text-center w-full py-8">Selecione os períodos e clique em "Gerar Comparação".</p>
+                            )}
+                        </div>
+                        <div className="flex justify-end space-x-4 mt-8">
+                            <button
+                                onClick={handleExportChart}
+                                className="bg-purple-600 text-white px-5 py-3 rounded-lg shadow-md hover:bg-purple-700 transition-colors focus:outline-none focus:ring-2 focus:ring-purple-400"
+                            >
+                                <i className="fas fa-image mr-2"></i> Exportar Gráfico (Imagem)
+                            </button>
+                            <button
+                                onClick={handleExportData}
+                                className="bg-green-600 text-white px-5 py-3 rounded-lg shadow-md hover:bg-green-700 transition-colors focus:outline-none focus:ring-2 focus:ring-green-400"
+                            >
+                                <i className="fas fa-file-csv mr-2"></i> Exportar Dados (CSV/JSON)
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="bg-white p-6 rounded-lg shadow-xl mb-8">
+                        <h3 className="text-2xl font-medium text-gray-700 mb-4">Detalhes do Histórico de Incidentes</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                            <div>
+                                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="filterIP">
+                                    Filtrar por IP
+                                </label>
+                                <input
+                                    type="text"
+                                    id="filterIP"
+                                    className="p-3 border border-gray-300 rounded-lg shadow-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                    placeholder="Ex: 192.168.1.1"
+                                    value={filterIP}
+                                    onChange={(e) => setFilterIP(e.target.value)}
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="filterUser">
+                                    Filtrar por Usuário
+                                </label>
+                                <input
+                                    type="text"
+                                    id="filterUser"
+                                    className="p-3 border border-gray-300 rounded-lg shadow-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                    placeholder="Ex: johndoe"
+                                    value={filterUser}
+                                    onChange={(e) => setFilterUser(e.target.value)}
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="filterSeverity">
+                                    Filtrar por Severidade
+                                </label>
+                                <select
+                                    id="filterSeverity"
+                                    className="p-3 border border-gray-300 rounded-lg shadow-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                    value={filterSeverity}
+                                    onChange={(e) => setFilterSeverity(e.target.value)}
+                                >
+                                    <option value="">Todas</option>
+                                    {availableSeverities.map(s => (
+                                        <option key={s} value={s}>{s}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="filterActivity">
+                                    Filtrar por Tipo de Atividade
+                                </label>
+                                <select
+                                    id="filterActivity"
+                                    className="p-3 border border-gray-300 rounded-lg shadow-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                    value={filterActivity}
+                                    onChange={(e) => setFilterActivity(e.target.value)}
+                                >
+                                    <option value="">Todas</option>
+                                    {availableIncidentTypes.map(type => (
+                                        <option key={type} value={type}>{type}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
+                        <div className="flex justify-end mb-4">
+                            <button
+                                onClick={handleClearFilters}
+                                className="bg-gray-400 text-white px-5 py-2 rounded-lg shadow-md hover:bg-gray-500 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400"
+                            >
+                                <i className="fas fa-filter-slash mr-2"></i> Limpar Filtros
+                            </button>
+                        </div>
+
+                        <div className="bg-white p-6 rounded-lg shadow-xl scroll-container">
+                            {getSortedAndFilteredIncidents().length === 0 ? (
+                                <p className="text-gray-600 text-center py-8">Nenhum incidente encontrado com os filtros aplicados.</p>
+                            ) : (
+                                <table className="min-w-full divide-y divide-gray-200">
+                                    <thead className="bg-gray-50">
+                                        <tr>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider rounded-tl-lg cursor-pointer" onClick={() => handleSort('timestamp')}>
+                                                Timestamp
+                                                {sortColumn === 'timestamp' && (
+                                                    sortDirection === 'asc' ? <i className="fas fa-sort-up ml-2"></i> : <i className="fas fa-sort-down ml-2"></i>
+                                                )}
+                                            </th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" onClick={() => handleSort('type')}>
+                                                Tipo
+                                                {sortColumn === 'type' && (
+                                                    sortDirection === 'asc' ? <i className="fas fa-sort-up ml-2"></i> : <i className="fas fa-sort-down ml-2"></i>
+                                                )}
+                                            </th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" onClick={() => handleSort('severity')}>
+                                                Severidade
+                                                {sortColumn === 'severity' && (
+                                                    sortDirection === 'asc' ? <i className="fas fa-sort-up ml-2"></i> : <i className="fas fa-sort-down ml-2"></i>
+                                                )}
+                                            </th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" onClick={() => handleSort('user')}>
+                                                Usuário
+                                                {sortColumn === 'user' && (
+                                                    sortDirection === 'asc' ? <i className="fas fa-sort-up ml-2"></i> : <i className="fas fa-sort-down ml-2"></i>
+                                                )}
+                                            </th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider rounded-tr-lg cursor-pointer" onClick={() => handleSort('ip')}>
+                                                IP de Origem
+                                                {sortColumn === 'ip' && (
+                                                    sortDirection === 'asc' ? <i className="fas fa-sort-up ml-2"></i> : <i className="fas fa-sort-down ml-2"></i>
+                                                )}
+                                            </th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descrição</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="bg-white divide-y divide-gray-200">
+                                        {getSortedAndFilteredIncidents().map((incident) => (
+                                            <tr key={incident.id} className="hover:bg-gray-50 transition-colors">
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{incident.timestamp}</td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{incident.type}</td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getSeverityColor(incident.severity)}`}>
+                                                        {incident.severity}
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{incident.user}</td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{incident.ip}</td>
+                                                <td className="px-6 py-4 text-sm text-gray-600 truncate max-w-xs">{incident.description}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+
+        const ReportsManagement = () => {
+            const [reportType, setReportType] = useState('dailyActivity');
+            const [reportData, setReportData] = useState([]);
+            const [filterDate, setFilterDate] = useState(new Date().toISOString().split('T')[0]); //YYYY-MM-DD
+            const [filterSeverity, setFilterSeverity] = useState('');
+            const [filterUser, setFilterUser] = useState('');
+            const [filterIP, setFilterIP] = useState('');
+
+            useEffect(() => {
+                // Generate initial report data based on default type
+                const today = new Date();
+                setReportData(generateDailyActivityReport(today));
+            }, []);
+
+            const handleGenerateReport = () => {
+                let data = [];
+                const date = new Date(filterDate);
+
+                switch (reportType) {
+                    case 'dailyActivity':
+                        data = generateDailyActivityReport(date);
+                        // Apply filters
+                        data = data.filter(item => {
+                            const matchesSeverity = filterSeverity === '' || item.severity === filterSeverity;
+                            const matchesUser = filterUser === '' || item.user.toLowerCase().includes(filterUser.toLowerCase());
+                            const matchesIP = filterIP === '' || item.ip.includes(filterIP);
+                            return matchesSeverity && matchesUser && matchesIP;
+                        });
+                        break;
+                    case 'trends':
+                        data = generateTrendReport('weekly'); // Simple simulation for now
+                        break;
+                    case 'personalData':
+                        data = generatePersonalDataReport(date);
+                        break;
+                    case 'loginSuccess':
+                        data = generateLoginActivityReport('Bem-Sucedido');
+                        // Apply filters if needed for this report
+                        break;
+                    case 'loginFailed':
+                        data = generateLoginActivityReport('Falhas');
+                        // Apply filters if needed for this report
+                        break;
+                    default:
+                        data = [];
+                }
+                setReportData(data);
+            };
+
+            const handleExportReport = (format) => {
+                // In a real application, this would trigger backend logic to generate and download the file.
+                // Here, we simulate a download.
+                const filename = `argos_report_${reportType}_${new Date().toISOString().split('T')[0]}.${format}`;
+                const dummyContent = JSON.stringify(reportData, null, 2);
+                const blob = new Blob([dummyContent], { type: `text/${format === 'csv' ? 'csv' : 'plain'}` });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                alert(`Exportando relatório como ${filename}! (Simulação)`);
+            };
+
+            const getSeverityColor = (severity) => {
+                switch (severity) {
+                    case 'Crítico': return 'text-red-700 bg-red-100';
+                    case 'Alto': return 'text-orange-700 bg-orange-100';
+                    case 'Médio': return 'text-yellow-700 bg-yellow-100';
+                    case 'Baixo': return 'text-blue-700 bg-blue-100';
+                    default: return 'text-gray-700 bg-gray-100';
+                }
+            };
+
+            return (
+                <div className="p-8">
+                    <h2 className="text-3xl font-semibold mb-6 text-gray-800 border-b-2 border-blue-400 pb-2">
+                        <i className="fas fa-file-alt mr-3"></i> Relatórios
+                    </h2>
+
+                    <div className="bg-white p-6 rounded-lg shadow-xl mb-8">
+                        <h3 className="text-2xl font-medium text-gray-700 mb-4">Gerar Novo Relatório</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end mb-6">
+                            <div>
+                                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="reportType">
+                                    Tipo de Relatório
+                                </label>
+                                <select
+                                    id="reportType"
+                                    className="p-3 border border-gray-300 rounded-lg shadow-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                    value={reportType}
+                                    onChange={(e) => setReportType(e.target.value)}
+                                >
+                                    <option value="dailyActivity">Relatório Diário de Atividades Suspeitas</option>
+                                    <option value="trends">Relatório de Tendências sobre Incidentes</option>
+                                    <option value="personalData">Relatório de Incidentes com Dados Pessoais</option>
+                                    <option value="loginSuccess">Relatório de Atividades de Login Bem-Sucedido</option>
+                                    <option value="loginFailed">Relatório de Tentativas de Login Falhadas</option>
+                                </select>
+                            </div>
+                            {reportType === 'dailyActivity' && (
+                                <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div>
+                                        <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="filterDate">
+                                            Data do Relatório
+                                        </label>
+                                        <input
+                                            type="date"
+                                            id="filterDate"
+                                            className="p-3 border border-gray-300 rounded-lg shadow-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                            value={filterDate}
+                                            onChange={(e) => setFilterDate(e.target.value)}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="filterSeverity">
+                                            Severidade
+                                        </label>
+                                        <select
+                                            id="filterSeverity"
+                                            className="p-3 border border-gray-300 rounded-lg shadow-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                            value={filterSeverity}
+                                            onChange={(e) => setFilterSeverity(e.target.value)}
+                                        >
+                                            <option value="">Todas</option>
+                                            <option value="Baixo">Baixo</option>
+                                            <option value="Médio">Médio</option>
+                                            <option value="Alto">Alto</option>
+                                            <option value="Crítico">Crítico</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="filterUser">
+                                            Usuário
+                                        </label>
+                                        <input
+                                            type="text"
+                                            id="filterUser"
+                                            className="p-3 border border-gray-300 rounded-lg shadow-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                            placeholder="Nome do usuário"
+                                            value={filterUser}
+                                            onChange={(e) => setFilterUser(e.target.value)}
+                                        />
+                                    </div>
+                                </div>
+                            )}
+
+                             {(reportType === 'dailyActivity' || reportType === 'loginSuccess' || reportType === 'loginFailed') && (
+                                <div className="md:col-span-1">
+                                    <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="filterIP">
+                                        Endereço IP
+                                    </label>
+                                    <input
+                                        type="text"
+                                        id="filterIP"
+                                        className="p-3 border border-gray-300 rounded-lg shadow-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                        placeholder="Ex: 192.168.1.1"
+                                        value={filterIP}
+                                        onChange={(e) => setFilterIP(e.target.value)}
+                                    />
+                                </div>
+                            )}
+                            <div className="md:col-span-1 flex justify-end items-end space-x-4">
+                                <button
+                                    onClick={handleGenerateReport}
+                                    className="bg-blue-600 text-white px-5 py-3 rounded-lg shadow-md hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                >
+                                    <i className="fas fa-play-circle mr-2"></i> Gerar Relatório
+                                </button>
+                                <button
+                                    onClick={() => handleExportReport('pdf')}
+                                    className="bg-purple-600 text-white px-5 py-3 rounded-lg shadow-md hover:bg-purple-700 transition-colors focus:outline-none focus:ring-2 focus:ring-purple-400"
+                                >
+                                    <i className="fas fa-file-pdf mr-2"></i> Exportar PDF
+                                </button>
+                                <button
+                                    onClick={() => handleExportReport('csv')}
+                                    className="bg-green-600 text-white px-5 py-3 rounded-lg shadow-md hover:bg-green-700 transition-colors focus:outline-none focus:ring-2 focus:ring-green-400"
+                                >
+                                    <i className="fas fa-file-csv mr-2"></i> Exportar CSV
+                                </button>
+                            </div>
+                        </div>
+
+                        {reportData.length === 0 ? (
+                            <p className="text-gray-600 text-center py-8">Gere um relatório para visualizar os dados aqui.</p>
+                        ) : (
+                            <div className="scroll-container bg-gray-50 p-4 rounded-lg border border-gray-200">
+                                <h3 className="text-xl font-semibold mb-4 text-gray-800">Resultados do Relatório</h3>
+                                {reportType === 'dailyActivity' && (
+                                    <table className="min-w-full divide-y divide-gray-200">
+                                        <thead className="bg-gray-50">
+                                            <tr>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Timestamp</th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Atividade</th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Severidade</th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Usuário</th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">IP</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="bg-white divide-y divide-gray-200">
+                                            {reportData.map((item, index) => (
+                                                <tr key={index} className="hover:bg-gray-50">
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.timestamp}</td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{item.activity}</td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getSeverityColor(item.severity)}`}>
+                                                            {item.severity}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{item.user}</td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{item.ip}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                )}
+
+                                {reportType === 'trends' && (
+                                    <table className="min-w-full divide-y divide-gray-200">
+                                        <thead className="bg-gray-50">
+                                            <tr>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Período</th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo de Incidente</th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Número de Incidentes</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="bg-white divide-y divide-gray-200">
+                                            {reportData.map((item, index) => (
+                                                <tr key={index} className="hover:bg-gray-50">
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.period}</td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{item.type}</td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{item.incidents}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                )}
+
+                                {reportType === 'personalData' && (
+                                    <table className="min-w-full divide-y divide-gray-200">
+                                        <thead className="bg-gray-50">
+                                            <tr>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Timestamp</th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo de Incidente</th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo de Dado</th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Usuários Afetados</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="bg-white divide-y divide-gray-200">
+                                            {reportData.map((item, index) => (
+                                                <tr key={index} className="hover:bg-gray-50">
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.timestamp}</td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{item.incidentType}</td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{item.dataType}</td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{item.affectedUsers}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                )}
+
+                                {(reportType === 'loginSuccess' || reportType === 'loginFailed') && (
+                                    <table className="min-w-full divide-y divide-gray-200">
+                                        <thead className="bg-gray-50">
+                                            <tr>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Timestamp</th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Usuário</th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">IP de Origem</th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="bg-white divide-y divide-gray-200">
+                                            {reportData.map((item, index) => (
+                                                <tr key={index} className="hover:bg-gray-50">
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.timestamp}</td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{item.user}</td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{item.ip}</td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                                                            item.status === 'SUCESSO' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                                                        }`}>
+                                                            {item.status}
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        };
+
+
+        const App = () => {
+            const [currentPage, setCurrentPage] = useState('login'); // Start at login page
+            const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+            const handleLogin = (loggedInStatus) => {
+                setIsLoggedIn(loggedInStatus);
+                if (loggedInStatus) {
+                    setCurrentPage('dashboard'); // Redirect to dashboard on successful login
+                }
+            };
+
+            const handleLogout = () => {
+                setIsLoggedIn(false);
+                setCurrentPage('login'); // Go back to login page on logout
+            };
+
+            const renderPage = () => {
+                if (!isLoggedIn) {
+                    return <LoginPage onLogin={handleLogin} />;
+                }
+
+                switch (currentPage) {
+                    case 'users':
+                        return <UserManagement />;
+                    case 'profiles':
+                        return <ProfileManagement />;
+                    case 'logs':
+                        return <LogMonitoring />;
+                    case 'alerts':
+                        return <AlertManagement />;
+                    case 'reports':
+                        return <ReportsManagement />;
+                    case 'incidentHistory': // New case for Incident History
+                        return <IncidentHistory />;
+                    case 'dashboard':
+                        return <ThreatDashboard />;
+                    default:
+                        return <ThreatDashboard />;
+                }
+            };
+
+            return (
+                <div className="min-h-screen bg-gray-100">
+                    <Header onNavigate={setCurrentPage} isLoggedIn={isLoggedIn} onLogout={handleLogout} />
+                    <main className="container mx-auto py-8">
+                        {renderPage()}
+                    </main>
+                </div>
+            );
+        };
+
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>
